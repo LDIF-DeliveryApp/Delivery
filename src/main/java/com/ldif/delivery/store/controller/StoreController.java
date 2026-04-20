@@ -35,4 +35,9 @@ public class StoreController {
                             @RequestBody StoreRequest request){
         storeService.updateStore(storeId, request, "testUser");
     }
+
+    @DeleteMapping("/{storeId}")
+    public void deleteStore(@PathVariable Long storeId) {
+        storeService.deleteStore(storeId, "testUser");
+    }
 }
