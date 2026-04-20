@@ -36,12 +36,11 @@ public class MenuEntity {
 //    @JoinColumn(name = store_id, nullable = false)
 //    private Store store;
 
-    public MenuEntity(String name, Integer price, String description, Boolean isHidden) {
+    public MenuEntity(MenuRequest request) {
         //this.store=store;
-        this.name = name;
-        this.price = price;
-        this.description = description;
-        this.isHidden = isHidden;
+        this.name = request.getName();
+        this.price = request.getPrice();
+        this.description = request.getDescription();
     }
 
     public void update(@Valid MenuRequest request) {
