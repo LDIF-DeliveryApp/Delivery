@@ -1,12 +1,10 @@
 package com.ldif.delivery.store.controller;
 
 import com.ldif.delivery.store.dto.StoreRequest;
+import com.ldif.delivery.store.dto.StoreResponse;
 import com.ldif.delivery.store.service.StoreService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,4 +24,9 @@ public class StoreController {
 //                          @AuthenticationPrincipal UserDetails user) {
 //      return storeService.createStore(request, user.getUsername());
 //    }
+
+    @GetMapping("/{storeId}")
+    public StoreResponse getStore(@PathVariable Long storeId){
+        return storeService.getStore(storeId);
+    }
 }

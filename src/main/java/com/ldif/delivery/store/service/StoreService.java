@@ -1,6 +1,7 @@
 package com.ldif.delivery.store.service;
 
 import com.ldif.delivery.store.dto.StoreRequest;
+import com.ldif.delivery.store.dto.StoreResponse;
 import com.ldif.delivery.store.entity.StoreEntity;
 import com.ldif.delivery.store.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,5 +22,12 @@ public class StoreService {
         );
 
         return storeRepository.save(store).getStoreId();
+    }
+
+    public StoreResponse getStore(Long storeId){
+        StoreEntity store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
+
+        return new StoreResponse(store);
     }
 }
