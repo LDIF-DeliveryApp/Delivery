@@ -15,14 +15,14 @@ public class StoreController {
 
     @PostMapping
     public Long createStore(@RequestBody StoreRequest request){
-        return storeService.createStore(request, "testUser");
+        return storeService.createStore(request);
     }
 // 인증/인가 적용 후 사용
 // 현재 로그인한 사용자 정보를 받아 createdBy에 전달하기 위한 코드
 //    @PostMapping
 //    public Long createStore(@RequestBody StoreRequest request,
 //                          @AuthenticationPrincipal UserDetails user) {
-//      return storeService.createStore(request, user.getUsername());
+//      return storeService.createStore(request);
 //    }
 
     @GetMapping("/{storeId}")
@@ -33,11 +33,11 @@ public class StoreController {
     @PutMapping("/{storeId}")
     public void updateStore(@PathVariable Long storeId,
                             @RequestBody StoreRequest request){
-        storeService.updateStore(storeId, request, "testUser");
+        storeService.updateStore(storeId, request);
     }
 
     @DeleteMapping("/{storeId}")
     public void deleteStore(@PathVariable Long storeId) {
-        storeService.deleteStore(storeId, "testUser");
+        storeService.deleteStore(storeId);
     }
 }

@@ -16,12 +16,11 @@ public class StoreService {
     private final StoreRepository storeRepository;
 
     @Transactional
-    public Long createStore(StoreRequest request, String username){
+    public Long createStore(StoreRequest request){
         StoreEntity store = new StoreEntity(
                 request.getName(),
                 request.getAddress(),
-                request.getPhone(),
-                username
+                request.getPhone()
         );
 
         return storeRepository.save(store).getStoreId();
@@ -39,7 +38,7 @@ public class StoreService {
     }
 
     @Transactional
-    public void updateStore(Long storeId, StoreRequest request, String username){
+    public void updateStore(Long storeId, StoreRequest request){
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
@@ -50,20 +49,17 @@ public class StoreService {
         store.updateStore(
                 request.getName(),
                 request.getAddress(),
-                request.getPhone(),
-                username
+                request.getPhone()
         );
     }
 
     @Transactional
-    public void deleteStore(Long storeId, String username){
+    public void deleteStore(Long storeId){
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
         if (store.isDeleted()){
             throw new IllegalArgumentException("이미 삭제된 가게입니다.");
         }
-
-        store.softDelete(username);
     }
 }

@@ -1,5 +1,6 @@
 package com.ldif.delivery.store.entity;
 
+import com.ldif.delivery.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @Table(name = "p_store")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class StoreEntity {
+public class StoreEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,49 +34,19 @@ public class StoreEntity {
     @Column(name = "is_hidden")
     private boolean isHidden = false;
 
-    // 생성 시간
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
-    // 생성자
-    @Column(name = "created_by", length = 100)
-    private String createdBy;
-
-    // 수정 시간
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    // 수정자
-    @Column(name = "updated_by", length = 100)
-    private String updatedBy;
-
-    // 삭제 시간 (soft delete)
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    // 삭제자
-    @Column(name = "deleted_by", length = 100)
-    private String deletedBy;
-
-
-    // 생성자
-    public StoreEntity(String name, String address, String phone, String createdBy) {
+    public StoreEntity(String name, String address, String phone) {
         this.name = name;
         this.address = address;
         this.phone = phone;
-        this.createdBy = createdBy;
-        this.createdAt = LocalDateTime.now();
         this.isHidden = false;
         this.averageRating = BigDecimal.valueOf(0.0);
     }
 
 
-    public void updateStore(String name, String address, String phone, String updatedBy) {
+    public void updateStore(String name, String address, String phone) {
         this.name = name;
         this.address = address;
         this.phone = phone;
-        this.updatedBy = updatedBy;
-        this.updatedAt = LocalDateTime.now();
     }
 
     public void updateRating(BigDecimal newRating) {
@@ -94,12 +65,7 @@ public class StoreEntity {
         this.isHidden = false;
     }
 
-    public void softDelete(String deletedBy) {
-        this.deletedAt = LocalDateTime.now();
-        this.deletedBy = deletedBy;
-    }
-
     public boolean isDeleted() {
-        return this.deletedAt != null;
+        return this.getDeletedAt() != null;
     }
 }
