@@ -12,13 +12,13 @@ public class ResUserDto {
     String nickname;
     String email;
     UserRoleEnum role;
-    Boolean isPublic;
+    String createdAt;
 
     public ResUserDto(UserEntity user) {
         this.username = user.getUsername();
         this.nickname = user.getNickname();
         this.email = user.getEmail();
         this.role = user.getRole();
-        this.isPublic = user.getIsPublic();
+        this.createdAt = user.getCreatedAt().toString();
     }
 }

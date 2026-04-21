@@ -39,6 +39,15 @@ public class UserEntity extends BaseEntity {
     private Boolean isPublic = true;
 
 
+    public  UserEntity(String username, String nickname, String email, String password, UserRoleEnum role){
+        this.username = username;
+        this.nickname = nickname;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+    }
+
+
 
 
 }
