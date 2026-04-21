@@ -29,7 +29,7 @@ public class CategoryControllerV1 {
 
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> getProducts(){
-        return ResponseEntity.ok(categoryServiceV1.getCategorys());
+        return ResponseEntity.ok(categoryServiceV1.getCategories());
     }
 
     @GetMapping("/{id}")
@@ -39,7 +39,7 @@ public class CategoryControllerV1 {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryResponse> updateProdct(@PathVariable UUID id, @Valid @RequestBody CategoryRequest request)
+    public ResponseEntity<CategoryResponse> updateProduct(@PathVariable UUID id, @Valid @RequestBody CategoryRequest request)
     {
         return ResponseEntity.ok(categoryServiceV1.updateCategory(id,request));
     }

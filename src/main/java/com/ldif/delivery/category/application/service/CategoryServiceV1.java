@@ -36,9 +36,10 @@ public class CategoryServiceV1 {
         return CategoryResponse.from(categoryEntity);
     }
 
-    public List<CategoryResponse> getCategorys(){
+    public List<CategoryResponse> getCategories(){
         return categoryRepository.findAll().stream()
-                .map(CategoryResponse::new)
+                .map(CategoryResponse::from)
+                // 각 CategoryEntity를 받아서 CategoryResponse.from(entity)를 호출해라.
                 .toList();
     }
 
