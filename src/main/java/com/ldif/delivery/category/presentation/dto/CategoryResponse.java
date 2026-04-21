@@ -8,21 +8,21 @@ import java.util.UUID;
 
 @Getter
 @Builder
-public class CreateCategoryResponse {
+public class CategoryResponse {
 
     private final UUID categroyId;
     private final String name;
 
-    //public CreateCategoryResponse(CategoryEntity categoryEntity)
-    //{
-    //    this.categroyId = categoryEntity.getCategoryId();
-    //    this.name = categoryEntity.getName();
-    //}
+    public CategoryResponse(CategoryEntity categoryEntity)
+    {
+        this.categroyId = categoryEntity.getCategoryId();
+        this.name = categoryEntity.getName();
+    }
 
     // @Builder + 정적팩토리메서드
-    public static CreateCategoryResponse from(CategoryEntity categoryEntity)
+    public static CategoryResponse from(CategoryEntity categoryEntity)
     {
-        return CreateCategoryResponse.builder()
+        return CategoryResponse.builder()
                 .categroyId(categoryEntity.getCategoryId())
                 .name(categoryEntity.getName())
                 .build();

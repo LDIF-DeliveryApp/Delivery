@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class CreateCategoryRequest {
+public class CategoryRequest {
 
     @NotBlank(message = "카테고리 명은 필수입니다.")
     private String name;

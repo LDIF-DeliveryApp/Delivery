@@ -24,6 +24,11 @@ public class CategoryEntity extends BaseEntity {
     @Column(nullable = false,unique = true)
     private String name;
 
+    @Builder
+    public CategoryEntity(String name) {
+        this.name = name;
+    }
+
     public void update(String name) {
         this.name = name;
     }
