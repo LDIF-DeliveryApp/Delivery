@@ -12,8 +12,8 @@ import java.util.UUID;
 @Table(name = "p_category") // db예약어랑 안겹치기위해 테이블 네임 지어주기
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLDelete(sql = "UPDATE p_category SET delete_at = NOW() WHERE category_id = ?") // soft delete
-@SQLRestriction("delete_at IS NULL")
+@SQLDelete(sql = "UPDATE p_category SET deleted_at = NOW() WHERE category_id = ?") // soft delete
+@SQLRestriction("deleted_at IS NULL")
 public class CategoryEntity extends BaseEntity {
 
     @Id

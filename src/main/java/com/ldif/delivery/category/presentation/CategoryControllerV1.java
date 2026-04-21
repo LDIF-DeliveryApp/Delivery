@@ -24,7 +24,7 @@ public class CategoryControllerV1 {
     public ResponseEntity<CategoryResponse> createCategory(@Valid @RequestBody CategoryRequest request)
     {
         CategoryResponse createCategoryResponse = categoryServiceV1.createCategory(request);
-        return ResponseEntity.created(URI.create("/api/categories/" + createCategoryResponse.getCategroyId())).body(createCategoryResponse);
+        return ResponseEntity.created(URI.create("/api/categories/" + createCategoryResponse.getCategoryId())).body(createCategoryResponse);
     }
 
     @GetMapping
