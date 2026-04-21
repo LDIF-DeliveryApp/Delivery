@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Querydsl 생성 파일 git 관리 제외 ###
+/src/main/generated/
