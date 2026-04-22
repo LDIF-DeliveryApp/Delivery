@@ -3,6 +3,9 @@ plugins {
 	id 'org.springframework.boot' version '3.5.13'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
+ext {
+	springAiVersion = "1.1.4"
+}
 
 group = 'com.ldif'
 version = '0.0.1-SNAPSHOT'
@@ -18,6 +21,7 @@ repositories {
 }
 
 dependencies {
+	implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
 	runtimeOnly 'com.h2database:h2'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -25,9 +29,15 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	implementation 'com.mysql:mysql-connector-j'
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
+}
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.ai:spring-ai-bom:$springAiVersion"
+	}
 }
 
 tasks.named('test') {

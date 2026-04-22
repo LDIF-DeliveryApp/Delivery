@@ -8,12 +8,14 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
 @Getter
 @MappedSuperclass
-@EntityListeners(AutoCloseable.class)
+//@EntityListeners(AutoCloseable.class)
+@EntityListeners(AuditingEntityListener.class)
 public class BaseEntity {
 
     // 1. 생성 시간
@@ -43,4 +45,9 @@ public class BaseEntity {
     // 6. 삭제자
     @Column
     private String deletedBy;
+
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
+        //this.deletedBy = deletedBy;
+    }
 }
