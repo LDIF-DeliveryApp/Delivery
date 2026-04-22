@@ -42,6 +42,9 @@ public class UserServiceV1 {
                 () -> new IllegalArgumentException("해당 사용자를 찾을 수 없습니다. username: " + username)
         );
 
+        //TODO
+        // 삭제된 유저
+
         return new ResUserDto(user);
 
     }
@@ -78,5 +81,15 @@ public class UserServiceV1 {
         user.setRole(requestDto.getRole());
 
         return new ResUserDto(user);
+    }
+
+    @Transactional
+    public void deleteUser(String username, UserDetailsImpl loginUser) {
+        UserEntity user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        user.softDelete(loginUser.getUsername());
+
+        return;
     }
 }

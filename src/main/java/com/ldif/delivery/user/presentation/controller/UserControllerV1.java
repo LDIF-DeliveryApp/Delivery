@@ -11,6 +11,7 @@ import com.ldif.delivery.user.presentation.dto.request.ReqUserRoleDto;
 import com.ldif.delivery.user.presentation.dto.response.ResUserDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -97,5 +98,17 @@ public class UserControllerV1 {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", user));
+    }
+
+    @DeleteMapping("/{username}")
+    @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER})
+    public ResponseEntity<CommonResponse<Void>> deleteUser (
+            @PathVariable String username,
+            @AuthenticationPrincipal UserDetailsImpl loginUser
+    ){
+        userService.deleteUser(username, loginUser);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", null));
     }
 }
