@@ -2,11 +2,15 @@ package com.ldif.delivery.menu.domain.entity;
 
 import com.ldif.delivery.global.infrastructure.entity.BaseEntity;
 import com.ldif.delivery.menu.presentation.dto.MenuRequest;
+import com.ldif.delivery.store.domain.entity.StoreEntity;
+import com.ldif.delivery.store.domain.entity.StoreEntity;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -15,8 +19,8 @@ import lombok.NoArgsConstructor;
 public class MenuEntity extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long menuId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID menuId;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -33,12 +37,12 @@ public class MenuEntity extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDeleted = Boolean.FALSE;
 
-//    @ManyToOne
-//    @JoinColumn(name = store_id, nullable = false)
-//    private Store store;
+    @ManyToOne
+    @JoinColumn(name = "store_id", nullable = false)
+    private StoreEntity storeEntity;
 
-    public MenuEntity(MenuRequest request) {
-        //this.store=store;
+    public MenuEntity(MenuRequest request, StoreEntity storeEntity) {
+        this.storeEntity = storeEntity;
         this.name = request.getName();
         this.price = request.getPrice();
         this.description = request.getDescription();
@@ -56,10 +60,10 @@ public class MenuEntity extends BaseEntity {
 
     public void delete() {
         this.isDeleted = true;
-        super.delete();
+        super.softDelete("임시 이름");
     }
 
-    public void setDescription(String description){
-        this.description=description;
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

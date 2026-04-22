@@ -1,4 +1,4 @@
-package com.ldif.delivery.store.dto;
+package com.ldif.delivery.store.presentation.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

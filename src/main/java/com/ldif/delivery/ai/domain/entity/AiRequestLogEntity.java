@@ -11,6 +11,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -21,7 +22,7 @@ public class AiRequestLogEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long aiLogId;
+    private UUID aiLogId;
 
     //요청 텍스트
     @Column(nullable = false, length = 100)

@@ -52,9 +52,4 @@ public class BaseEntity {
         this.deletedBy = username;
     }
 
-
-//     public void delete() {
-//         this.deletedAt = LocalDateTime.now();
-//         //this.deletedBy = deletedBy;
-//     }
 }
