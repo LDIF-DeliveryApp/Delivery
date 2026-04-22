@@ -18,33 +18,28 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class BaseEntity {
 
-    // 1. 생성 시간
     @CreatedDate
     @Column(updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
-    // 2. 생성자
     @CreatedBy
     @Column(updatable = false)
     private String createdBy;
 
-    // 3. 수정 시간
     @LastModifiedDate
     @Column
     private LocalDateTime updatedAt;
 
-    // 4. 수정자
     @LastModifiedBy
     @Column
     private String updatedBy;
 
-    // 5. 삭제 시간 (Soft Delete용)
     @Column
     private LocalDateTime deletedAt;
 
-    // 6. 삭제자
     @Column
     private String deletedBy;
+
 
     public void delete() {
         this.deletedAt = LocalDateTime.now();
