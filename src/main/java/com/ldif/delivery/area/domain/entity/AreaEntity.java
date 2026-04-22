@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Entity
 @Getter
 @Table(name = "p_area")
@@ -14,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class AreaEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long areaId;
+    private UUID areaId;
 
     @Column(nullable = false, length = 100, unique = true)
     private String name;
