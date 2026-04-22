@@ -7,7 +7,7 @@ import com.ldif.delivery.menu.domain.entity.MenuEntity;
 import com.ldif.delivery.menu.domain.repository.MenuRepository;
 import com.ldif.delivery.menu.presentation.dto.MenuRequest;
 import com.ldif.delivery.menu.presentation.dto.MenuResponse;
-import com.ldif.delivery.store.entity.StoreEntity;
+import com.ldif.delivery.store.domain.entity.StoreEntity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -73,7 +73,7 @@ public class MenuServiceV1 {
         return new MenuResponse(menuEntity);
     }
 
-    public Page<MenuResponse> getMenus(Pageable pageable, String keyword, Long storeId) {
+    public Page<MenuResponse> getMenus(Pageable pageable, String keyword, UUID storeId) {
         Page<MenuEntity> menuList;
 
         menuList = menuRepository.findAllByStoreEntity_StoreIdAndNameContainingIgnoreCaseAndIsDeletedFalse(storeId, keyword, pageable);

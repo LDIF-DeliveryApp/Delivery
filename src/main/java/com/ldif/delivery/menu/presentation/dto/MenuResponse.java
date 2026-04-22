@@ -12,7 +12,7 @@ public class MenuResponse {
     private final Integer price;
     private final String description;
     private final Boolean isHidden;
-    private final Long storeId;
+    private final UUID storeId;
 
     public MenuResponse(MenuEntity menuEntity) {
         this.menuId = menuEntity.getMenuId();

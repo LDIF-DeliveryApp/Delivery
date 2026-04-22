@@ -1,4 +1,4 @@
-package com.ldif.delivery.store.entity;
+package com.ldif.delivery.store.domain.entity;
 
 import com.ldif.delivery.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -14,9 +15,9 @@ import java.math.BigDecimal;
 public class StoreEntity extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "store_id")
-    private Long storeId;
+    private UUID storeId;
 
     @Column(nullable = false, length = 100)
     private String name;

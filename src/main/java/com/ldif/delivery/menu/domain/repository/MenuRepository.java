@@ -9,5 +9,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface MenuRepository extends JpaRepository<MenuEntity, UUID> {
-    Page<MenuEntity> findAllByStoreEntity_StoreIdAndNameContainingIgnoreCaseAndIsDeletedFalse(Long storeId, String keyword, Pageable pageable);
+    Page<MenuEntity> findAllByStoreEntity_StoreIdAndNameContainingIgnoreCaseAndIsDeletedFalse(UUID storeId, String keyword, Pageable pageable);
 }
