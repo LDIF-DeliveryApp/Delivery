@@ -3,11 +3,12 @@ package com.ldif.delivery.store.dto;
 import com.ldif.delivery.store.entity.StoreEntity;
 import lombok.Getter;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Getter
 public class StoreResponse {
 
-    private Long storeId;
+    private UUID storeId;
     private String name;
     private String address;
     private String phone;

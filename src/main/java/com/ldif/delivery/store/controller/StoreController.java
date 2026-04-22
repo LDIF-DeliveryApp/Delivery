@@ -5,6 +5,7 @@ import com.ldif.delivery.store.dto.StoreResponse;
 import com.ldif.delivery.store.service.StoreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -14,7 +15,7 @@ public class StoreController {
     private final StoreService storeService;
 
     @PostMapping
-    public Long createStore(@RequestBody StoreRequest request){
+    public UUID createStore(@RequestBody StoreRequest request){
         return storeService.createStore(request);
     }
 // 인증/인가 적용 후 사용
@@ -26,18 +27,18 @@ public class StoreController {
 //    }
 
     @GetMapping("/{storeId}")
-    public StoreResponse getStore(@PathVariable Long storeId){
+    public StoreResponse getStore(@PathVariable UUID storeId){
         return storeService.getStore(storeId);
     }
 
     @PutMapping("/{storeId}")
-    public void updateStore(@PathVariable Long storeId,
+    public void updateStore(@PathVariable UUID storeId,
                             @RequestBody StoreRequest request){
         storeService.updateStore(storeId, request);
     }
 
     @DeleteMapping("/{storeId}")
-    public void deleteStore(@PathVariable Long storeId) {
+    public void deleteStore(@PathVariable UUID storeId) {
         storeService.deleteStore(storeId);
     }
 }
