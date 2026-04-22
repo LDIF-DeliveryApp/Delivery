@@ -3,9 +3,13 @@ package com.ldif.delivery.user.presentation.controller;
 import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import com.ldif.delivery.global.infrastructure.presentation.dto.CommonResponse;
 import com.ldif.delivery.global.infrastructure.presentation.dto.PageResponseDto;
+import com.ldif.delivery.menu.presentation.dto.MenuRequest;
 import com.ldif.delivery.user.application.service.UserServiceV1;
 import com.ldif.delivery.user.domain.entity.UserRoleEnum;
+import com.ldif.delivery.user.presentation.dto.request.ReqUserDto;
+import com.ldif.delivery.user.presentation.dto.request.ReqUserRoleDto;
 import com.ldif.delivery.user.presentation.dto.response.ResUserDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -62,5 +66,36 @@ public class UserControllerV1 {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", user));
 
+    }
+
+    @PutMapping("/{username}")
+    @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER, UserRoleEnum.Authority.CUSTOMER})
+    public ResponseEntity<CommonResponse<ResUserDto>> updateUserInfo (
+            @PathVariable String username,
+            @RequestBody ReqUserDto requestDto,
+            @AuthenticationPrincipal UserDetailsImpl loginUser){
+
+        if(!loginUser.hasPermission(username)){
+            throw new AccessDeniedException("접근 권한이 없습니다.");
+        }
+
+        ResUserDto user = userService.updateUserInfo(username, requestDto, loginUser);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", user));
+    }
+
+
+    @PutMapping("/{username}/role")
+    @Secured(UserRoleEnum.Authority.MASTER)
+    public ResponseEntity<CommonResponse<ResUserDto>> updateUserRole (
+            @PathVariable String username,
+            @Valid @RequestBody ReqUserRoleDto requestDto
+    ){
+
+        ResUserDto user = userService.updateUserRole(username, requestDto);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", user));
     }
 }
