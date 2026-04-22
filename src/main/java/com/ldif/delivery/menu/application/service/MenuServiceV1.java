@@ -57,7 +57,7 @@ public class MenuServiceV1 {
 //        }
 //
 
-        menuEntity.delete();
+        menuEntity.delete(loginUser.getUsername());
     }
 
     //메뉴 숨김 처리

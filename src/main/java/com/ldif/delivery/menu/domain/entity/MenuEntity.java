@@ -62,9 +62,9 @@ public class MenuEntity extends BaseEntity {
         isHidden = !isHidden;
     }
 
-    public void delete() {
+    public void delete(String username) {
         this.isDeleted = true;
-        super.softDelete("임시 이름");
+        super.softDelete(username);
     }
 
     public void setDescription(String description) {
