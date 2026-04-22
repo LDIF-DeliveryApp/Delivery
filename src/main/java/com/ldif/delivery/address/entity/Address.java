@@ -22,7 +22,7 @@ public class Address extends BaseTimeEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "alias", length = 50)
+    @Column(name = "alias", length = 20)
     private String alias;
 
     @Column(name = "recipient_name", length =50)
