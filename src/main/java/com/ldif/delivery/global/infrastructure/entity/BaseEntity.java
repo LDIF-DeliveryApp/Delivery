@@ -44,4 +44,17 @@ public class BaseEntity {
     // 6. 삭제자
     @Column
     private String deletedBy;
+
+
+    // 7. 소프트 삭제
+    public void softDelete(String username) {
+        this.deletedAt = LocalDateTime.now();
+        this.deletedBy = username;
+    }
+
+
+//     public void delete() {
+//         this.deletedAt = LocalDateTime.now();
+//         //this.deletedBy = deletedBy;
+//     }
 }
