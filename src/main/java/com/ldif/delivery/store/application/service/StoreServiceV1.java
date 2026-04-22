@@ -1,22 +1,24 @@
-package com.ldif.delivery.store.service;
+package com.ldif.delivery.store.application.service;
 
-import com.ldif.delivery.store.dto.StoreRequest;
-import com.ldif.delivery.store.dto.StoreResponse;
-import com.ldif.delivery.store.entity.StoreEntity;
-import com.ldif.delivery.store.repository.StoreRepository;
+import com.ldif.delivery.store.presentation.dto.StoreRequest;
+import com.ldif.delivery.store.presentation.dto.StoreResponse;
+import com.ldif.delivery.store.domain.entity.StoreEntity;
+import com.ldif.delivery.store.domain.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class StoreService {
+public class StoreServiceV1 {
 
     private final StoreRepository storeRepository;
 
     @Transactional
-    public Long createStore(StoreRequest request){
+    public UUID createStore(StoreRequest request){
         StoreEntity store = new StoreEntity(
                 request.getName(),
                 request.getAddress(),
@@ -26,7 +28,7 @@ public class StoreService {
         return storeRepository.save(store).getStoreId();
     }
 
-    public StoreResponse getStore(Long storeId){
+    public StoreResponse getStore(UUID storeId){
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
@@ -38,7 +40,7 @@ public class StoreService {
     }
 
     @Transactional
-    public void updateStore(Long storeId, StoreRequest request){
+    public void updateStore(UUID storeId, StoreRequest request){
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
@@ -54,7 +56,7 @@ public class StoreService {
     }
 
     @Transactional
-    public void deleteStore(Long storeId){
+    public void deleteStore(UUID storeId){
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
