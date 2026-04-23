@@ -1,6 +1,5 @@
 package com.ldif.delivery.store.application.service;
 
-
 import com.ldif.delivery.menu.application.service.MenuServiceV1;
 import com.ldif.delivery.menu.presentation.dto.MenuRequest;
 import com.ldif.delivery.menu.presentation.dto.MenuResponse;
@@ -27,8 +26,7 @@ public class StoreServiceV1 {
     private final MenuServiceV1 menuServiceV1;
 
     @Transactional
-    public UUID createStore(StoreRequest request){
-
+    public UUID createStore(StoreRequest request) {
         StoreEntity store = new StoreEntity(
                 request.getName(),
                 request.getAddress(),
@@ -37,9 +35,9 @@ public class StoreServiceV1 {
 
         return storeRepository.save(store).getStoreId();
     }
-    @Transactional(readOnly = true)
-    public StoreResponse getStore(UUID storeId){
 
+    @Transactional(readOnly = true)
+    public StoreResponse getStore(UUID storeId) {
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
@@ -50,6 +48,7 @@ public class StoreServiceV1 {
         return new StoreResponse(store);
     }
 
+    @Transactional(readOnly = true)
     public List<StoreResponse> getStores() {
         return storeRepository.findAll().stream()
                 .filter(store -> !store.isDeleted())
@@ -58,8 +57,7 @@ public class StoreServiceV1 {
     }
 
     @Transactional
-    public void updateStore(UUID storeId, StoreRequest request){
-
+    public void updateStore(UUID storeId, StoreRequest request) {
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
@@ -75,8 +73,7 @@ public class StoreServiceV1 {
     }
 
     @Transactional
-    public void deleteStore(UUID storeId){
-
+    public void deleteStore(UUID storeId) {
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
@@ -95,8 +92,8 @@ public class StoreServiceV1 {
 
     public Page<MenuResponse> getMenus(String keyword, int page, int size, String sort, UUID storeId) {
         Sort.Direction direction = sort.equals("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
-        Sort SortBy = Sort.by(direction, "createdAt");
-        Pageable pageable = PageRequest.of(page, size, SortBy);
+        Sort sortBy = Sort.by(direction, "createdAt");
+        Pageable pageable = PageRequest.of(page, size, sortBy);
 
         return menuServiceV1.getMenus(pageable, keyword, storeId);
     }

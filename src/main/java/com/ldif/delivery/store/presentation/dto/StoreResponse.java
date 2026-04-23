@@ -2,6 +2,7 @@ package com.ldif.delivery.store.presentation.dto;
 
 import com.ldif.delivery.store.domain.entity.StoreEntity;
 import lombok.Getter;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -9,11 +10,11 @@ import java.util.UUID;
 @Getter
 public class StoreResponse {
 
-    private UUID storeId;
-    private String name;
-    private String address;
-    private String phone;
-    private BigDecimal averageRating;
+    private final UUID storeId;
+    private final String name;
+    private final String address;
+    private final String phone;
+    private final BigDecimal averageRating;
     private final boolean isHidden;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
