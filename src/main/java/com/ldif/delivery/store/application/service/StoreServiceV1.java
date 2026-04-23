@@ -100,11 +100,16 @@ public class StoreServiceV1 {
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
+//        if (!loginUser.hasPermission(store.getOwnerId())) {
+//            throw new AccessDeniedException("접근 권한이 없습니다.");
+//        }
+
+
         if (store.isDeleted()) {
             throw new IllegalArgumentException("삭제된 가게에는 메뉴를 등록할 수 없습니다.");
         }
 
-        return menuServiceV1.setMenu(request, store);
+        return menuServiceV1.setMenu(request, store, loginUser);
     }
 
     // 가게별 메뉴 목록 조회
