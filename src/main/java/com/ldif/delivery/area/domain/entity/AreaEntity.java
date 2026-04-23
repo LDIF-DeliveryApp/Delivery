@@ -1,6 +1,7 @@
 package com.ldif.delivery.area.domain.entity;
 
 import com.ldif.delivery.area.persentation.dto.AreaRequest;
+import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import com.ldif.delivery.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
@@ -28,17 +29,23 @@ public class AreaEntity extends BaseEntity {
     private String district;
 
     @Column(nullable = false)
-    private Boolean isActive= Boolean.TRUE;
+    private Boolean isActive = Boolean.TRUE;
 
     @Column(nullable = false)
     private Boolean isDeleted = Boolean.FALSE;
 
-    public void update(@Valid AreaRequest areaRequest){
+    public AreaEntity(AreaRequest request) {
+        this.name = request.getName();
+        this.city = request.getCity();
+        this.district = request.getDistrict();
+    }
+
+    public void update(@Valid AreaRequest areaRequest) {
 
     }
 
-    public void delete() {
-        this.isDeleted = true;
-        super.softDelete("임시이름");
+    public void delete(UserDetailsImpl loginUser) {
+        this.isDeleted = Boolean.TRUE;
+        super.softDelete(loginUser.getUsername());
     }
 }
