@@ -1,4 +1,35 @@
-# Welcome to your organization's demo respository
-This code repository (or "repo") is designed to demonstrate the best GitHub has to offer with the least amount of noise.
+# 🛵 DDon Delivery 프로젝트
 
-The repo includes an `index.html` file (so it can render a web page), two GitHub Actions workflows, and a CSS stylesheet dependency.
+## 📑 목차
+1. [📢 프로젝트 개요](#1-프로젝트-개요)
+2. [🎬 주요 기능 (시연 영상)](#2-주요-기능-시연-영상)
+3. [⚙️ 프로젝트 정보 및 개발 환경](#3-프로젝트-정보-및-개발-환경)
+4. [🛠 기술 스택](#4-기술-스택)
+5. [🏗 아키텍처](#5-아키텍처)
+6. [📂 패키지 구조](#6-패키지-구조)
+7. [🚀 실행 방법](#7-실행-방법)
+8. [🌐 배포 환경](#8-배포-환경)
+9. [🔗 링크 (팀 노션)](#9-링크-팀-노션)
+10. [👥 팀 구성](#10-팀-구성)
+
+---
+
+## 1. 프로젝트 개요
+
+## 2. 주요 기능 (시연 영상)
+
+## 3. 프로젝트 정보 및 개발 환경
+
+## 4. 기술 스택
+
+## 5. 아키텍처
+
+## 6. 패키지 구조
+
+## 7. 실행 방법
+
+## 8. 배포 환경
+
+## 9. 링크 (팀 노션)
+
+## 10. 팀 구성
