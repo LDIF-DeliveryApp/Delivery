@@ -30,6 +30,19 @@ public class ReviewControllerV1 {
 
     private final ReviewServiceV1 reviewService;
 
+    @PostMapping("/orders/{orderId}/reviews")
+    public ResponseEntity<CommonResponse<ResReviewDetailDto>> createReview(
+            @PathVariable UUID orderId,
+            @Valid @RequestBody ReqReviewDto reqReviewDto,
+            @AuthenticationPrincipal UserDetailsImpl loginUser) {
+
+        ResReviewDetailDto createReview = reviewService.createReview(orderId, reqReviewDto, loginUser);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", createReview));
+
+    }
+
     @GetMapping("/reviews")
     public ResponseEntity<CommonResponse<PageResponseDto<ResReviewDto>>> getReviews(
             @RequestParam(required = false) UUID storeId,
@@ -69,6 +82,19 @@ public class ReviewControllerV1 {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", updateReview));
 
+    }
+
+    @DeleteMapping("/reviews/{reviewId}")
+    @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER, UserRoleEnum.Authority.CUSTOMER})
+    public ResponseEntity<CommonResponse<Void>> deleteReview (
+            @PathVariable UUID reviewId,
+            @AuthenticationPrincipal UserDetailsImpl loginUser
+    ){
+
+        reviewService.deleteReview(reviewId, loginUser);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", null));
     }
 
 
