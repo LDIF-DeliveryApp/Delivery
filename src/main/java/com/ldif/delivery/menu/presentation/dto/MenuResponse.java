@@ -3,14 +3,16 @@ package com.ldif.delivery.menu.presentation.dto;
 import com.ldif.delivery.menu.domain.entity.MenuEntity;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 public class MenuResponse {
-    private final Long menuId;
+    private final UUID menuId;
     private final String name;
     private final Integer price;
     private final String description;
     private final Boolean isHidden;
-    //private final Store store;
+    private final UUID storeId;
 
     public MenuResponse(MenuEntity menuEntity) {
         this.menuId = menuEntity.getMenuId();
@@ -18,6 +20,6 @@ public class MenuResponse {
         this.price = menuEntity.getPrice();
         this.description = menuEntity.getDescription();
         this.isHidden = menuEntity.getIsHidden();
-        //this.store=menu.getStore();
+        this.storeId = menuEntity.getStoreEntity().getStoreId();
     }
 }

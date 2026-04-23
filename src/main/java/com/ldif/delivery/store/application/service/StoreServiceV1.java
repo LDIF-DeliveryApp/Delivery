@@ -1,10 +1,18 @@
 package com.ldif.delivery.store.application.service;
 
+
+import com.ldif.delivery.menu.application.service.MenuServiceV1;
+import com.ldif.delivery.menu.presentation.dto.MenuRequest;
+import com.ldif.delivery.menu.presentation.dto.MenuResponse;
 import com.ldif.delivery.store.presentation.dto.StoreRequest;
 import com.ldif.delivery.store.presentation.dto.StoreResponse;
 import com.ldif.delivery.store.domain.entity.StoreEntity;
 import com.ldif.delivery.store.domain.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +24,11 @@ import java.util.UUID;
 public class StoreServiceV1 {
 
     private final StoreRepository storeRepository;
+    private final MenuServiceV1 menuServiceV1;
 
     @Transactional
     public UUID createStore(StoreRequest request){
+
         StoreEntity store = new StoreEntity(
                 request.getName(),
                 request.getAddress(),
@@ -29,10 +39,11 @@ public class StoreServiceV1 {
     }
 
     public StoreResponse getStore(UUID storeId){
+
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
-        if(store.isDeleted()){
+        if (store.isDeleted()) {
             throw new IllegalArgumentException("삭제된 가게입니다.");
         }
 
@@ -41,10 +52,11 @@ public class StoreServiceV1 {
 
     @Transactional
     public void updateStore(UUID storeId, StoreRequest request){
+
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
-        if (store.isDeleted()){
+        if (store.isDeleted()) {
             throw new IllegalArgumentException("삭제된 가게는 수정할 수 없습니다.");
         }
 
@@ -57,11 +69,28 @@ public class StoreServiceV1 {
 
     @Transactional
     public void deleteStore(UUID storeId){
+
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
-        if (store.isDeleted()){
+        if (store.isDeleted()) {
             throw new IllegalArgumentException("이미 삭제된 가게입니다.");
         }
+    }
+
+    @Transactional
+    public MenuResponse newMenu(UUID storeId, MenuRequest request) {
+        StoreEntity store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
+
+        return menuServiceV1.setMenu(request, store);
+    }
+
+    public Page<MenuResponse> getMenus(String keyword, int page, int size, String sort, UUID storeId) {
+        Sort.Direction direction = sort.equals("ASC") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort SortBy = Sort.by(direction, "createdAt");
+        Pageable pageable = PageRequest.of(page, size, SortBy);
+
+        return menuServiceV1.getMenus(pageable, keyword, storeId);
     }
 }
