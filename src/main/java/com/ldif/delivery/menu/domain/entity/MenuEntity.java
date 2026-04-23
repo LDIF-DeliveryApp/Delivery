@@ -41,6 +41,10 @@ public class MenuEntity extends BaseEntity {
     @JoinColumn(name = "store_id", nullable = false)
     private StoreEntity storeEntity;
 
+    public UUID getStoreId() {
+        return storeEntity != null ? storeEntity.getStoreId() : null;
+    }
+
     public MenuEntity(MenuRequest request, StoreEntity storeEntity) {
         this.storeEntity = storeEntity;
         this.name = request.getName();
@@ -58,9 +62,9 @@ public class MenuEntity extends BaseEntity {
         isHidden = !isHidden;
     }
 
-    public void delete() {
+    public void delete(String username) {
         this.isDeleted = true;
-        super.softDelete("임시 이름");
+        super.softDelete(username);
     }
 
     public void setDescription(String description) {
