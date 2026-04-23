@@ -29,10 +29,10 @@ public class AreaEntity extends BaseEntity {
     private String district;
 
     @Column(nullable = false)
-    private Boolean isActive = Boolean.TRUE;
+    private Boolean isActive = true;
 
     @Column(nullable = false)
-    private Boolean isDeleted = Boolean.FALSE;
+    private Boolean isDeleted = false;
 
     public AreaEntity(AreaRequest request) {
         this.name = request.getName();
@@ -41,7 +41,13 @@ public class AreaEntity extends BaseEntity {
     }
 
     public void update(@Valid AreaRequest areaRequest) {
+        this.name = areaRequest.getName();
+        this.city = areaRequest.getCity();
+        this.district = areaRequest.getDistrict();
+    }
 
+    public void active() {
+        isActive = !isActive;
     }
 
     public void delete(UserDetailsImpl loginUser) {
