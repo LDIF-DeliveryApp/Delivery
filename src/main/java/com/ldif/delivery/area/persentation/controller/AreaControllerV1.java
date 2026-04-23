@@ -3,6 +3,7 @@ package com.ldif.delivery.area.persentation.controller;
 import com.ldif.delivery.area.application.service.AreaServiceV1;
 import com.ldif.delivery.area.persentation.dto.AreaRequest;
 import com.ldif.delivery.area.persentation.dto.AreaResponse;
+import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import com.ldif.delivery.global.infrastructure.presentation.dto.CommonResponse;
 import com.ldif.delivery.global.infrastructure.presentation.dto.PageResponseDto;
 import com.ldif.delivery.user.domain.entity.UserRoleEnum;
@@ -12,7 +13,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/areas")
@@ -43,5 +47,24 @@ public class AreaControllerV1 {
                 .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", data));
     }
 
+    @GetMapping("/{areaId}")
+    public ResponseEntity<CommonResponse<AreaResponse>> getArea(@PathVariable UUID areaId) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", areaServiceV1.getArea(areaId)));
+    }
 
+    @PutMapping("/{areaId}")
+    @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER})
+    public ResponseEntity<CommonResponse<AreaResponse>> updateArea(@PathVariable UUID areaId, @Valid @RequestBody AreaRequest request) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", areaServiceV1.updateArea(areaId, request)));
+    }
+
+    @DeleteMapping("/{areaId}")
+    @Secured(UserRoleEnum.Authority.MASTER)
+    public ResponseEntity<CommonResponse<String>> deleteArea(@PathVariable UUID areaId, @AuthenticationPrincipal UserDetailsImpl loginUser) {
+        areaServiceV1.deleteArea(areaId, loginUser);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", "deleted"));
+    }
 }

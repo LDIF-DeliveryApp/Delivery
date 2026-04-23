@@ -4,6 +4,7 @@ import com.ldif.delivery.area.domain.entity.AreaEntity;
 import com.ldif.delivery.area.domain.repository.AreaRepository;
 import com.ldif.delivery.area.persentation.dto.AreaRequest;
 import com.ldif.delivery.area.persentation.dto.AreaResponse;
+import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,5 +40,29 @@ public class AreaServiceV1 {
         Page<AreaEntity> pagelist = areaRepository.findByNameContainingAndIsDeletedFalse(keyword, pageable);
 
         return pagelist.map(AreaResponse::new);
+    }
+
+    public AreaResponse getArea(UUID areaId) {
+        AreaEntity areaEntity = findAreaById(areaId);
+        return new AreaResponse(areaEntity);
+    }
+
+    public AreaResponse updateArea(UUID areaId, @Valid AreaRequest request) {
+        AreaEntity areaEntity = findAreaById(areaId);
+        areaEntity.update(request);
+        return new AreaResponse(areaEntity);
+    }
+
+    private AreaEntity findAreaById(UUID id) {
+        AreaEntity areaEntity = areaRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("지역 없음." + id));
+        if (areaEntity.getIsDeleted()) {
+            throw new IllegalArgumentException("지역 없음." + id);
+        }
+        return areaEntity;
+    }
+
+    public void deleteArea(UUID areaId, UserDetailsImpl loginUser) {
+        AreaEntity areaEntity = findAreaById(areaId);
+        areaEntity.delete(loginUser);
     }
 }
