@@ -1,6 +1,8 @@
 package com.ldif.delivery.review.application.service;
 
 import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
+import com.ldif.delivery.order.domain.entity.OrderEntity;
+import com.ldif.delivery.order.domain.repository.OrderRepository;
 import com.ldif.delivery.review.domain.entity.ReviewEntity;
 import com.ldif.delivery.review.domain.respository.ReviewRepository;
 import com.ldif.delivery.review.presentation.dto.ReqReviewDto;
@@ -32,33 +34,26 @@ public class ReviewServiceV1 {
     private final ReviewRepository reviewRepository;
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
-//    private final OrderRepository orderRepository;
+    private final OrderRepository orderRepository;
 
     @Transactional
     public ResReviewDetailDto createReview(UUID orderId, @Valid ReqReviewDto reqReviewDto, UserDetailsImpl loginUser) {
 
+        OrderEntity order = orderRepository.findActiveById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않거나 삭제된 주문입니다."));
 
-//        OrderEntity order = orderRepository.findByOrderIdAndDeletedAtIsNull(orderId)
-//                .orElseThrow(() -> new IllegalArgumentException("주문 없음." + orderId));
-//
-//
-//        validateReviewAuthor(order.getUser().getUsername(), loginUser);
-
-        UserEntity user = userRepository.findByUsername(loginUser.getUsername())
+        UserEntity user = userRepository.findByUsername(order.getCustomerId())
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-//        StoreEntity store = storeRepository.findByStoreId((order.getStoreId())
-//                .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
-
-        //테스트용
-        UUID storeId = UUID.fromString("550e8400-e29b-41d4-a716-446655440020");
-
-                StoreEntity store = storeRepository.findById(storeId)
+        StoreEntity store = storeRepository.findById(order.getStoreId())
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
-        ReviewEntity review = new ReviewEntity(store, user, reqReviewDto.getRating(), reqReviewDto.getContent());
+        validateReviewAuthor(user.getUsername(), loginUser);
 
-        return new ResReviewDetailDto(review);
+        ReviewEntity review = new ReviewEntity(order, store, user, reqReviewDto.getRating(), reqReviewDto.getContent());
+        ReviewEntity savedReview = reviewRepository.save(review);
+
+        return new ResReviewDetailDto(savedReview);
     }
 
 

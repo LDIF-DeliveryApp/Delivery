@@ -1,6 +1,7 @@
 package com.ldif.delivery.review.domain.entity;
 
 import com.ldif.delivery.global.infrastructure.entity.BaseEntity;
+import com.ldif.delivery.order.domain.entity.OrderEntity;
 import com.ldif.delivery.store.domain.entity.StoreEntity;
 import com.ldif.delivery.user.domain.entity.UserEntity;
 import jakarta.persistence.*;
@@ -27,10 +28,10 @@ public class ReviewEntity extends BaseEntity {
     @Column
     private UUID reviewId;
 
-//    @NotNull
-//    @OneToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "order_id", nullable = false, unique = true)
-//    private OrderEntity order;
+    @NotNull
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    private OrderEntity order;
 
     @NotNull
     @ManyToOne
@@ -51,9 +52,9 @@ public class ReviewEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    public ReviewEntity(/*OrderEntity order,*/ StoreEntity store, UserEntity user, Integer rating, String content){
+    public ReviewEntity(OrderEntity order, StoreEntity store, UserEntity user, Integer rating, String content){
 
-        // this.order = order
+        this.order = order;
         this.store = store;
         this.user = user;
         this.rating = rating;

@@ -104,7 +104,7 @@ public class StoreServiceV1 {
             throw new IllegalArgumentException("삭제된 가게에는 메뉴를 등록할 수 없습니다.");
         }
 
-        return menuServiceV1.setMenu(request, store);
+        return menuServiceV1.setMenu(request, store, loginUser);
     }
 
     // 가게별 메뉴 목록 조회
