@@ -13,6 +13,7 @@ import java.util.UUID;
 public interface ReviewRepository extends JpaRepository<ReviewEntity, UUID> {
 
     Optional<ReviewEntity> findByReviewIdAndDeletedAtIsNull(UUID reviewId);
+    Optional<ReviewEntity> findByOrder_OrderId(UUID orderId);
 
     @Query("SELECT r FROM ReviewEntity r " +
             "WHERE r.deletedAt IS NULL " +
@@ -23,5 +24,6 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, UUID> {
             @Param("rating") Integer rating,
             Pageable pageable
     );
+
 
 }

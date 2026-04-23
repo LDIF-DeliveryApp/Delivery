@@ -2,6 +2,7 @@ package com.ldif.delivery.review.application.service;
 
 import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import com.ldif.delivery.order.domain.entity.OrderEntity;
+import com.ldif.delivery.order.domain.entity.OrderStatus;
 import com.ldif.delivery.order.domain.repository.OrderRepository;
 import com.ldif.delivery.review.domain.entity.ReviewEntity;
 import com.ldif.delivery.review.domain.respository.ReviewRepository;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j(topic = "ReviewService")
@@ -49,6 +51,17 @@ public class ReviewServiceV1 {
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
         validateReviewAuthor(user.getUsername(), loginUser);
+
+        Optional<ReviewEntity> checkReview = reviewRepository.findByOrder_OrderId(orderId);
+        if (checkReview.isPresent()){
+            throw new IllegalArgumentException("이미 등록된 리뷰가 있습니다.");
+        }
+
+        OrderStatus orderStatus = order.getStatus();
+
+        if(orderStatus != OrderStatus.COMPLETED) {
+            throw new IllegalStateException("배달이 완료된 주문만 리뷰를 작성할 수 있습니다.");
+        }
 
         ReviewEntity review = new ReviewEntity(order, store, user, reqReviewDto.getRating(), reqReviewDto.getContent());
         ReviewEntity savedReview = reviewRepository.save(review);
