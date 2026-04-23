@@ -95,7 +95,8 @@ public class StoreServiceV1 {
 
     // 메뉴 등록
     @Transactional
-    public MenuResponse newMenu(UUID storeId, MenuRequest request) {
+    public MenuResponse newMenu(UUID storeId, MenuRequest request, UserDetailsImpl loginUser) {
+
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 

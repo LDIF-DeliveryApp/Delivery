@@ -2,6 +2,8 @@ package com.ldif.delivery.ai.domain.entity;
 
 import com.ldif.delivery.ai.infrastructure.api.gemini.dto.response.GeminiResponseDto;
 import com.ldif.delivery.ai.presentation.dto.AiRequest;
+import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
+import com.ldif.delivery.user.domain.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -45,12 +47,13 @@ public class AiRequestLogEntity {
     private String createdBy;
 
     //요청자
-//    @ManyToOne
-//    @JoinColumn(name = userId, nullable = false)
-//    private User user;
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "username", nullable = false)
+    private UserEntity userEntity;
 
-    public AiRequestLogEntity(AiRequest aiRequest) {
+    public AiRequestLogEntity(AiRequest aiRequest, UserDetailsImpl loginUser) {
         this.requestType = aiRequest.getPrompt();
+        this.userEntity = loginUser.getUser();
     }
 
     public void setAiResponse(GeminiResponseDto geminiResponseDto) {
