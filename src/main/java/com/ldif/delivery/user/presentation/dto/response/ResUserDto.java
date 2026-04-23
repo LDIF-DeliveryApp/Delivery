@@ -5,6 +5,8 @@ import com.ldif.delivery.user.domain.entity.UserRoleEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @AllArgsConstructor
 public class ResUserDto {
@@ -12,13 +14,13 @@ public class ResUserDto {
     String nickname;
     String email;
     UserRoleEnum role;
-    String createdAt;
+    LocalDateTime createdAt;
 
     public ResUserDto(UserEntity user) {
         this.username = user.getUsername();
         this.nickname = user.getNickname();
         this.email = user.getEmail();
         this.role = user.getRole();
-        this.createdAt = user.getCreatedAt().toString();
+        this.createdAt = user.getCreatedAt();
     }
 }
