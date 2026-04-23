@@ -59,12 +59,7 @@ public class UserControllerV1 {
     @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER, UserRoleEnum.Authority.CUSTOMER})
     public ResponseEntity<CommonResponse<ResUserDto>> getUserInfo (@PathVariable String username, @AuthenticationPrincipal UserDetailsImpl loginUser){
 
-        if(!loginUser.hasPermission(username)){
-            throw new AccessDeniedException("접근 권한이 없습니다.");
-        }
-
-
-        ResUserDto user = userService.getUserInfo(username);
+        ResUserDto user = userService.getUserInfo(username, loginUser);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", user));
