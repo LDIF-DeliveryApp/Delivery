@@ -81,3 +81,20 @@ tasks.named('test') {
     environment "POSTGRES_PASSWORD", System.getenv("POSTGRES_PASSWORD")
     environment "JWT_SECRET_KEY", System.getenv("JWT_SECRET_KEY")
 }
+
+tasks.register('dev', JavaExec) {
+    group = "application"
+    description = "환경변수(.env)를 로드하여 애플리케이션을 실행합니다."
+
+    mainClass = 'com.ldif.delivery.DeliveryApplication'
+    classpath = sourceSets.main.runtimeClasspath
+
+    if (file(".env").exists()) {
+        file(".env").readLines().each { line ->
+            if (!line.isEmpty() && !line.startsWith("#") && line.contains("=")) {
+                def parts = line.split('=', 2)
+                environment parts[0].trim(), parts[1].trim()
+            }
+        }
+    }
+}
