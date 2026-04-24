@@ -11,6 +11,8 @@ import com.ldif.delivery.order.domain.repository.OrderRepository;
 import com.ldif.delivery.order.presentation.dto.*;
 import com.ldif.delivery.store.domain.entity.StoreEntity;
 import com.ldif.delivery.store.domain.repository.StoreRepository;
+import com.ldif.delivery.user.domain.entity.UserEntity;
+import com.ldif.delivery.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,8 +32,9 @@ import java.util.stream.Collectors;
 public class OrderServiceV1 {
 
     private final OrderRepository orderRepository;
-    private final MenuRepository menuRepository;
+    private final UserRepository userRepository;
     private final StoreRepository storeRepository;
+    private final MenuRepository menuRepository;
 
     private static final int CANCEL_LIMIT_MINUTES = 5;
 
@@ -40,19 +43,37 @@ public class OrderServiceV1 {
     // ───────────────────────────────────────────────────────────
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest req, String customerId) {
-        // 1. 가게 운영 상태 검증
+
+        //1. 주문자 조회
+        UserEntity customer = userRepository.findById(customerId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "존재하지 않는 사용자입니다. customerId=" + customerId));
+
+        // 2. 가게 운영 상태 검증
         StoreEntity store = storeRepository.findById(req.storeId())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 가게입니다. storeId=" + req.storeId()));
 
-        // 2. 메뉴 일괄 조회
+        if (store.isHidden()) {
+            throw new IllegalArgumentException("현재 운영 중이지 않은 가게입니다.");
+        }
+
+        // 3. 배송지 조회 ( 선택값, null허용)
+//        AddressEntity address = null;
+//        if (req.addressId() != null) {
+//            address = addressRepository.findById(req.addressId())
+//                    .orElseThrow(() -> new IllegalArgumentException(
+//                            "존재하지 않는 배송지입니다. addressId=" + req.addressId()));
+//        }
+
+        // 4. 메뉴 일괄 조회
         Set<UUID> menuIds = req.items().stream()
                 .map(OrderCreateRequest.OrderItemRequest::menuId)
                 .collect(Collectors.toSet());
 
         List<MenuEntity> menus = menuRepository.findAllById(menuIds);
 
-        // 3. 존재하지 않는 메뉴 검증
+        // 5. 존재하지 않는 메뉴 검증
         Set<UUID> foundIds = menus.stream()
                 .map(MenuEntity::getMenuId)
                 .collect(Collectors.toSet());
@@ -63,7 +84,7 @@ public class OrderServiceV1 {
             }
         });
 
-        // 4. 메뉴가 해당 가게 소속인지 검증
+        // 6. 메뉴가 해당 가게 소속인지 검증
         menus.forEach(menu -> {
             if (!menu.getStoreId().equals(req.storeId())) {
                 throw new IllegalArgumentException(
@@ -71,47 +92,46 @@ public class OrderServiceV1 {
             }
         });
 
-        // 5. 메뉴 주문 가능 상태 검증 (삭제, 숨김)
+        // 7. 메뉴 주문 가능 상태 검증 (삭제, 숨김)
         menus.forEach(menu -> {
-            // 5-1. 삭제 여부
+            // 7-1. 삭제 여부
             if (menu.getDeletedAt() != null) {
                 throw new IllegalArgumentException(
                         "삭제된 메뉴입니다. menuId=" + menu.getMenuId());
             }
 
-            // 5-2. 숨김 여부
+            // 7-2. 숨김 여부
             if (Boolean.TRUE.equals(menu.getIsHidden())) {
                 throw new IllegalArgumentException(
                         "현재 주문할 수 없는 메뉴입니다. menuId=" + menu.getMenuId());
             }
         });
 
-        //  6. 단가 스냅샷 맵 구성
-        Map<UUID, Integer> priceMap = menus.stream()
-                .collect(Collectors.toMap(
-                        MenuEntity::getMenuId,
-                        MenuEntity::getPrice
-                ));
+        // 8. 단가 스냅샷 맵 구성
+        Map<UUID, MenuEntity> menuMap = menus.stream()
+                .collect(Collectors.toMap(MenuEntity::getMenuId, m -> m));
 
-        // 7. OrderItem 생성
+        // 9. OrderItem 생성
         List<OrderItemEntity> items = req.items().stream()
-                .map(i -> OrderItemEntity.of(
-                        i.menuId(),
-                        i.quantity(),
-                        priceMap.get(i.menuId())
-                ))
+                .map(i -> {
+                    MenuEntity menu = menuMap.get(i.menuId());
+                    return OrderItemEntity.of(
+                            menu,
+                            i.quantity(),
+                            menu.getPrice()
+                    );
+                })
                 .toList();
 
         int totalPrice = items.stream()
                 .mapToInt(i -> i.getUnitPrice() * i.getQuantity())
                 .sum();
 
-        OrderType orderType = OrderType.valueOf(req.orderType());
-
+        // 10. Order 생성
         OrderEntity order = OrderEntity.create(
-                customerId,
-                req.storeId(),
-                req.addressId(),
+                customer,
+                store,
+                req.addressId(),    // address로 변경 예정
                 OrderType.valueOf(req.orderType()),
                 req.request(),
                 items,
@@ -140,7 +160,7 @@ public class OrderServiceV1 {
 
             case "OWNER" -> {
                 if (storeIdFilter != null) {
-                    // 본인 소유 가게인지 검증
+                    // OWNER가 storeId를 명시한 경우 본인 소유 가게인지 검증
                     validateStoreOwner(storeIdFilter, requesterId);
                 }
             }
@@ -193,7 +213,7 @@ public class OrderServiceV1 {
         OrderEntity order = findActiveOrder(orderId);
 
         if ("OWNER".equals(requesterRole)) {
-            validateStoreOwner(order.getStoreId(), requesterId);
+            validateStoreOwner(order.getStore().getStoreId(), requesterId);
         }
 
         order.changeStatus(req.status());
@@ -212,11 +232,12 @@ public class OrderServiceV1 {
             return OrderResponse.from(order);
         }
 
-        // CUSTOMER: 본인 주문 + 5분 이내 검사
+        // CUSTOMER: 본인 주문인지 확인
         validateOwnership(order, requesterId);
 
-        LocalDateTime deadline = order.getCreatedAt().plusMinutes(CANCEL_LIMIT_MINUTES);
-        if (LocalDateTime.now().isAfter(deadline)) {
+        // 5분 이내 취소 가능 여부 확인
+        if (LocalDateTime.now().isAfter(
+                order.getCreatedAt().plusMinutes(CANCEL_LIMIT_MINUTES))) {
             throw  new IllegalStateException("주문 생성 후 5분이 경과하여 취소할 수 없습니다.");
         }
 
@@ -243,7 +264,7 @@ public class OrderServiceV1 {
 
     // 주문 접근 가능자 확인
     private void validateOwnership(OrderEntity order, String requesterId) {
-        if (!order.getCustomerId().equals(requesterId)) {
+        if (!order.getCustomer().getUsername().equals(requesterId)) {
             throw new SecurityException("본인의 주문만 접근할 수 있습니다.");
         }
     }
@@ -253,20 +274,21 @@ public class OrderServiceV1 {
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 가게입니다."));
 
-        if (!store.getName().equals(ownerId)) {
-            throw new SecurityException("해당 가게의 주문에 접근할 권한이 없습니다.");
-        }
+        //StoreEntity에 OwnerId 생기면 활성화할 예정
+//        if (!store.getOwnerId.equals(ownerId)) {
+//            throw new SecurityException("해당 가게의 주문에 접근할 권한이 없습니다.");
+//        }
     }
 
     // 권한 확인
-    private void  validateReadAccess(OrderEntity order, String requesterId, String role) {
+    private void validateReadAccess(OrderEntity order, String requesterId, String role) {
         if ("MANAGER".equals(role) || "MASTER".equals(role)) return;
         if ("CUSTOMER".equals(role)) {
             validateOwnership(order, requesterId);
             return;
         }
         if ("OWNER".equals(role)) {
-            validateStoreOwner(order.getStoreId(), requesterId);
+            validateStoreOwner(order.getStore().getStoreId(), requesterId);
         }
     }
 }

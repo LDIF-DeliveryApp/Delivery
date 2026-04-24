@@ -29,7 +29,7 @@ public record OrderResponse(
         public static OrderItemResponse from(OrderItemEntity item) {
             return new OrderItemResponse(
                     item.getOrderItemId(),
-                    item.getMenuId(),
+                    item.getMenu().getMenuId(),
                     item.getQuantity(),
                     item.getUnitPrice()
             );
@@ -37,20 +37,20 @@ public record OrderResponse(
     }
 
     public static OrderResponse from(OrderEntity order) {
-        List<OrderItemResponse> itemResponses = order.getOrderItems().stream()
-                .map(OrderItemResponse::from)
-                .toList();
 
         return new OrderResponse(
                 order.getOrderId(),
-                order.getCustomerId(),
-                order.getStoreId(),
+                order.getCustomer().getUsername(),
+                order.getStore().getStoreId(),
                 order.getAddressId(),
+//                order.getAddress() != null ? order.getAddress().getAddressId() : null,
                 order.getOrderType().name(),
                 order.getStatus().name(),
                 order.getTotalPrice(),
                 order.getRequest(),
-                itemResponses,
+                order.getOrderItems().stream()
+                        .map(OrderItemResponse::from)
+                        .toList(),
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );
