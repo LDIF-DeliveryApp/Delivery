@@ -47,7 +47,12 @@ public class UserServiceV1 {
         return userPage.map(ResUserDto::new);
     }
 
-    public ResUserDto getUserInfo(String username) {
+    public ResUserDto getUserInfo(String username, UserDetailsImpl loginUser) {
+
+        if(!loginUser.hasPermission(username)){
+            throw new AccessDeniedException("접근 권한이 없습니다.");
+        }
+
         UserEntity user = userRepository.findByUsername(username).orElseThrow(
                 () -> new IllegalArgumentException("해당 사용자를 찾을 수 없습니다. username: " + username)
         );

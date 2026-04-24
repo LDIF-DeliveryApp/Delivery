@@ -87,6 +87,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * IllegalStateException 처리 (비즈니스 로직 상 잘못된 상태일 때)
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<CommonResponse<?>> handleIllegalStateException(IllegalStateException e) {
+        log.error("IllegalStateException 발생: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), "잘못된 요청 상태입니다.", 
+                        List.of(new CommonResponse.FieldErrorDto("state", e.getMessage()))));
+    }
+
+    /**
      * AccessDeniedException 처리 (권한 거부)
      */
     @ExceptionHandler(AccessDeniedException.class)
