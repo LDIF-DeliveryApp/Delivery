@@ -2,11 +2,16 @@ package com.ldif.delivery.store.presentation.controller;
 
 import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import com.ldif.delivery.global.infrastructure.presentation.dto.CommonResponse;
+import com.ldif.delivery.global.infrastructure.presentation.dto.PageResponseDto;
+import com.ldif.delivery.menu.presentation.dto.MenuRequest;
+import com.ldif.delivery.menu.presentation.dto.MenuResponse;
 import com.ldif.delivery.store.application.service.StoreServiceV1;
 import com.ldif.delivery.store.presentation.dto.StoreRequest;
 import com.ldif.delivery.store.presentation.dto.StoreResponse;
 import com.ldif.delivery.user.domain.entity.UserRoleEnum;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -102,5 +107,28 @@ public class StoreControllerV1 {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", null));
+    }
+
+    //메뉴 추가
+    @PostMapping("/{storeId}/menus")
+    @Secured(UserRoleEnum.Authority.OWNER)
+    public ResponseEntity<CommonResponse<MenuResponse>> setMenu(@PathVariable UUID storeId, @Valid @RequestBody MenuRequest request, @AuthenticationPrincipal UserDetailsImpl loginUser) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", storeServiceV1.newMenu(storeId, request, loginUser)));
+    }
+
+    //메뉴 목록 조회
+    @GetMapping("/{storeId}/menus")
+    public ResponseEntity<CommonResponse<PageResponseDto<MenuResponse>>> getMenus(
+            @RequestParam("keyword") String keyword,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam("sort") String sort,
+            @PathVariable UUID storeId) {
+        Page<MenuResponse> menuPage = storeServiceV1.getMenus(keyword, page, size, sort, storeId);
+        PageResponseDto<MenuResponse> data = new PageResponseDto<>(menuPage);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", data));
     }
 }

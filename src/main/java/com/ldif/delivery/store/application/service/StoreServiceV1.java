@@ -16,6 +16,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -100,6 +102,11 @@ public class StoreServiceV1 {
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
 
+//        if (!loginUser.hasPermission(store.getOwnerId())) {
+//            throw new AccessDeniedException("접근 권한이 없습니다.");
+//        }
+
+
         if (store.isDeleted()) {
             throw new IllegalArgumentException("삭제된 가게에는 메뉴를 등록할 수 없습니다.");
         }
@@ -114,8 +121,11 @@ public class StoreServiceV1 {
                 ? Sort.Direction.ASC
                 : Sort.Direction.DESC;
 
+        List<Integer> allowedSize = Arrays.asList(10, 30, 50);
+        int setSize = allowedSize.contains(size) ? size : 10;
+
         Sort sortBy = Sort.by(direction, "createdAt");
-        Pageable pageable = PageRequest.of(page, size, sortBy);
+        Pageable pageable = PageRequest.of(page, setSize, sortBy);
 
         return menuServiceV1.getMenus(pageable, keyword, storeId);
     }
