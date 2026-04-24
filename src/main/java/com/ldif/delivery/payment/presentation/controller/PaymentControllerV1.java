@@ -1,0 +1,89 @@
+package com.ldif.delivery.payment.presentation.controller;
+
+import com.ldif.delivery.global.infrastructure.presentation.dto.CommonResponse;
+import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
+import com.ldif.delivery.payment.application.service.PaymentServiceV1;
+import com.ldif.delivery.payment.presentation.dto.PaymentResponse;
+import com.ldif.delivery.payment.presentation.dto.PaymentStatusResponse;
+import com.ldif.delivery.user.domain.entity.UserRoleEnum;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/payments")
+public class PaymentControllerV1 {
+
+    private final PaymentServiceV1 paymentServiceV1;
+
+    // 결제 목록 조회 - 관리자/매니저만
+    @GetMapping
+    @Secured({
+            UserRoleEnum.Authority.MASTER,
+            UserRoleEnum.Authority.MANAGER
+    })
+    public ResponseEntity<CommonResponse<List<PaymentResponse>>> getPayments() {
+        List<PaymentResponse> payments = paymentServiceV1.getPayments();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", payments));
+    }
+
+    // 결제 상세 조회 - 고객/관리자/매니저
+    @GetMapping("/{paymentId}")
+    @Secured({
+            UserRoleEnum.Authority.CUSTOMER,
+            UserRoleEnum.Authority.MANAGER,
+            UserRoleEnum.Authority.MASTER
+    })
+    public ResponseEntity<CommonResponse<PaymentResponse>> getPayment(
+            @PathVariable UUID paymentId,
+            @AuthenticationPrincipal UserDetailsImpl loginUser
+    ) {
+        PaymentResponse payment = paymentServiceV1.getPayment(paymentId, loginUser);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", payment));
+    }
+
+    // 결제 상태 조회 - 고객/관리자/매니저
+    @GetMapping("/{paymentId}/status")
+    @Secured({
+            UserRoleEnum.Authority.CUSTOMER,
+            UserRoleEnum.Authority.MANAGER,
+            UserRoleEnum.Authority.MASTER
+    })
+    public ResponseEntity<CommonResponse<PaymentStatusResponse>> getPaymentStatus(
+            @PathVariable UUID paymentId,
+            @AuthenticationPrincipal UserDetailsImpl loginUser
+    ) {
+        PaymentStatusResponse paymentStatus = paymentServiceV1.getPaymentStatus(paymentId, loginUser);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", paymentStatus));
+    }
+
+    // 결제 취소 - 고객/관리자/매니저
+    @PatchMapping("/{paymentId}/cancel")
+    @Secured({
+            UserRoleEnum.Authority.CUSTOMER,
+            UserRoleEnum.Authority.MANAGER,
+            UserRoleEnum.Authority.MASTER
+    })
+    public ResponseEntity<CommonResponse<Void>> cancelPayment(
+            @PathVariable UUID paymentId,
+            @AuthenticationPrincipal UserDetailsImpl loginUser
+    ) {
+        paymentServiceV1.cancelPayment(paymentId, loginUser);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", null));
+    }
+}
