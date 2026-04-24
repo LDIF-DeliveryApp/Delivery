@@ -6,8 +6,10 @@ import com.ldif.delivery.ai.infrastructure.api.gemini.client.GeminiClient;
 import com.ldif.delivery.ai.infrastructure.api.gemini.dto.response.GeminiResponseDto;
 import com.ldif.delivery.ai.presentation.dto.AiRequest;
 import com.ldif.delivery.ai.presentation.dto.AiResponse;
+import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -22,9 +24,9 @@ public class AiServiceV1 {
     private final GeminiClient geminiClient;
 
     @Transactional
-    public AiResponse setDescription(@Valid AiRequest aiRequest) {
+    public AiResponse setDescription(@Valid AiRequest aiRequest, @AuthenticationPrincipal UserDetailsImpl loginUser) {
         GeminiResponseDto result = geminiClient.call(aiRequest.getPrompt());
-        AiRequestLogEntity aiRequestLogEntity = new AiRequestLogEntity(aiRequest);
+        AiRequestLogEntity aiRequestLogEntity = new AiRequestLogEntity(aiRequest, loginUser);
         aiRequestLogEntity.setAiResponse(result);
         aiRequestLogRepository.save(aiRequestLogEntity);
         return new AiResponse(aiRequestLogEntity);

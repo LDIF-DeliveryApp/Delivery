@@ -1,16 +1,20 @@
 package com.ldif.delivery.global.infrastructure.presentation.advice;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.ldif.delivery.global.infrastructure.presentation.dto.CommonResponse;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,20 +23,78 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     /**
+     * JSON 파싱 에러 및 Enum 변환 에러 처리
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<CommonResponse<?>> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        log.error("HttpMessageNotReadableException 발생: {}", e.getMessage());
+
+        String errorMessage = "잘못된 JSON 형식 또는 데이터 타입입니다.";
+        List<CommonResponse.FieldErrorDto> errors = List.of(new CommonResponse.FieldErrorDto("json", "JSON 파싱 중 오류가 발생했습니다."));
+
+        Throwable cause = e.getCause();
+        if (cause instanceof InvalidFormatException invalidFormatException) {
+            if (invalidFormatException.getTargetType().isEnum()) {
+                String fieldName = invalidFormatException.getPath().get(0).getFieldName();
+                String invalidValue = String.valueOf(invalidFormatException.getValue());
+                String allowedValues = Arrays.toString(invalidFormatException.getTargetType().getEnumConstants());
+
+                errorMessage = "유효하지 않은 Enum 값입니다.";
+                errors = List.of(new CommonResponse.FieldErrorDto(fieldName, 
+                        String.format("값 '%s'은(는) 유효하지 않습니다. 허용된 값: %s", invalidValue, allowedValues)));
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), errorMessage, errors));
+    }
+
+    /**
+     * 컨트롤러 파라미터 타입 불일치 에러 처리 (Query Param, Path Variable 등)
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<CommonResponse<?>> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        log.error("MethodArgumentTypeMismatchException 발생: {}", e.getMessage());
+
+        String fieldName = e.getName();
+        String invalidValue = String.valueOf(e.getValue());
+        String errorMessage = "잘못된 파라미터 타입입니다.";
+        
+        Class<?> targetType = e.getRequiredType();
+        if (targetType != null && targetType.isEnum()) {
+            errorMessage = "유효하지 않은 파라미터 값입니다.";
+            String allowedValues = Arrays.toString(targetType.getEnumConstants());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), errorMessage, 
+                            List.of(new CommonResponse.FieldErrorDto(fieldName, 
+                                    String.format("값 '%s'은(는) 유효하지 않습니다. 허용된 값: %s", invalidValue, allowedValues)))));
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), errorMessage, 
+                        List.of(new CommonResponse.FieldErrorDto(fieldName, "타입이 일치하지 않습니다."))));
+    }
+
+    /**
      * IllegalArgumentException 처리 (잘못된 인자 전달 시)
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<CommonResponse<?>> handleIllegalArgumentException(IllegalArgumentException e) {
         log.error("IllegalArgumentException 발생: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null));
+                .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), "잘못된 요청 인자입니다.", 
+                        List.of(new CommonResponse.FieldErrorDto("args", e.getMessage()))));
     }
 
+    /**
+     * AccessDeniedException 처리 (권한 거부)
+     */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<CommonResponse<?>> handleAccessDeniedException(AccessDeniedException e) {
         log.error("AccessDeniedException 발생: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(CommonResponse.error(HttpStatus.FORBIDDEN.value(), "접근 권한이 없습니다.", null));
+                .body(CommonResponse.error(HttpStatus.FORBIDDEN.value(), "접근 권한이 없습니다.", 
+                        List.of(new CommonResponse.FieldErrorDto("auth", "해당 리소스에 접근할 권한이 없습니다."))));
     }
 
     /**
@@ -41,8 +103,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<CommonResponse<?>> handleNullPointerException(NullPointerException e) {
         log.error("NullPointerException 발생: {}", e.getMessage());
+        String message = e.getMessage() != null ? e.getMessage() : "요청한 리소스를 찾을 수 없습니다.";
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(CommonResponse.error(HttpStatus.NOT_FOUND.value(), e.getMessage() != null ? e.getMessage() : "Null pointer exception occurred", null));
+                .body(CommonResponse.error(HttpStatus.NOT_FOUND.value(), "리소스를 찾을 수 없습니다.", 
+                        List.of(new CommonResponse.FieldErrorDto("resource", message))));
     }
 
     /**
@@ -57,7 +121,7 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.toList());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), "VALIDATION_ERROR", errors));
+                .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), "입력 값 검증에 실패하였습니다.", errors));
     }
 
     /**
@@ -74,11 +138,11 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.toList());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), "ENTITY_VALIDATION_ERROR", errors));
+                .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), "데이터 제약 조건 위반입니다.", errors));
     }
 
     /**
-     * JPA 트랜잭션 커밋 시 발생하는 예외 처리 (내부에 ConstraintViolationException이 포함된 경우가 많음)
+     * JPA 트랜잭션 커밋 시 발생하는 예외 처리
      */
     @ExceptionHandler(TransactionSystemException.class)
     public ResponseEntity<CommonResponse<?>> handleTransactionSystemException(TransactionSystemException e) {
@@ -89,7 +153,8 @@ public class GlobalExceptionHandler {
         
         log.error("TransactionSystemException 발생: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(CommonResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "TRANSACTION_ERROR", null));
+                .body(CommonResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "트랜잭션 처리 중 오류가 발생했습니다.", 
+                        List.of(new CommonResponse.FieldErrorDto("transaction", "데이터베이스 트랜잭션 오류입니다."))));
     }
 
     /**
@@ -99,6 +164,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<CommonResponse<?>> handleException(Exception e) {
         log.error("예상치 못한 Exception 발생: ", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(CommonResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "INTERNAL_SERVER_ERROR", null));
+                .body(CommonResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "서버 내부 오류가 발생했습니다.", 
+                        List.of(new CommonResponse.FieldErrorDto("server", e.getMessage() != null ? e.getMessage() : "Unknown error"))));
     }
 }
