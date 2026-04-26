@@ -23,7 +23,7 @@ import java.util.UUID;
 public class AiRequestLogEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID aiLogId;
 
     //요청 텍스트

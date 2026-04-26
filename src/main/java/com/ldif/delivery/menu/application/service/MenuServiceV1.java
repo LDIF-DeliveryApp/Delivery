@@ -9,14 +9,19 @@ import com.ldif.delivery.menu.domain.repository.MenuRepository;
 import com.ldif.delivery.menu.presentation.dto.MenuRequest;
 import com.ldif.delivery.menu.presentation.dto.MenuResponse;
 import com.ldif.delivery.store.domain.entity.StoreEntity;
+import com.ldif.delivery.user.domain.entity.UserEntity;
+import com.ldif.delivery.user.domain.entity.UserRoleEnum;
+import com.ldif.delivery.user.domain.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.EnumSet;
 import java.util.UUID;
 
 @Service
@@ -26,6 +31,7 @@ import java.util.UUID;
 public class MenuServiceV1 {
 
     private final MenuRepository menuRepository;
+    private final UserRepository userRepository;
     private final AiServiceV1 aiServiceV1;
 
     //메뉴 상세 조회
@@ -36,13 +42,14 @@ public class MenuServiceV1 {
 
     //메뉴 수정
     @Transactional
-    public MenuResponse updateMenu(UUID id, @Valid MenuRequest request, UserDetailsImpl loginUser) {
+    public MenuResponse updateMenu(UUID id, MenuRequest request, UserDetailsImpl loginUser) {
         MenuEntity menuEntity = findMenuById(id);
 
-//        if(!loginUser.hasPermission(menuEntity.getStoreEntity().getOwnerId())){
-//            throw new AccessDeniedException("접근 권한이 없습니다.");
-//        }
-//
+        if (!loginUser.hasPermission(menuEntity.getStoreEntity().getOwner().getUsername())) {
+            throw new AccessDeniedException("접근 권한이 없습니다.");
+        }
+        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.OWNER, UserRoleEnum.MANAGER, UserRoleEnum.MASTER));
+
         menuEntity.update(request);
         return new MenuResponse(menuEntity);
     }
@@ -52,10 +59,11 @@ public class MenuServiceV1 {
     public void deleteMenu(UUID id, UserDetailsImpl loginUser) {
         MenuEntity menuEntity = findMenuById(id);
 
-//        if(!loginUser.hasPermission(menuEntity.getStoreEntity().getOwnerId())){
-//            throw new AccessDeniedException("접근 권한이 없습니다.");
-//        }
-//
+        if (!loginUser.hasPermission(menuEntity.getStoreEntity().getOwner().getUsername())) {
+            throw new AccessDeniedException("접근 권한이 없습니다.");
+        }
+        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.OWNER, UserRoleEnum.MASTER));
+
 
         menuEntity.delete(loginUser.getUsername());
     }
@@ -65,10 +73,10 @@ public class MenuServiceV1 {
     public MenuResponse hideMenu(UUID id, UserDetailsImpl loginUser) {
         MenuEntity menuEntity = findMenuById(id);
 
-//        if(!loginUser.hasPermission(menuEntity.getStoreEntity().getOwnerId())){
-//            throw new AccessDeniedException("접근 권한이 없습니다.");
-//        }
-//
+        if (!loginUser.hasPermission(menuEntity.getStoreEntity().getOwner().getUsername())) {
+            throw new AccessDeniedException("접근 권한이 없습니다.");
+        }
+        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.OWNER, UserRoleEnum.MANAGER, UserRoleEnum.MASTER));
 
         menuEntity.hide();
         return new MenuResponse(menuEntity);
@@ -78,6 +86,12 @@ public class MenuServiceV1 {
     @Transactional
     public MenuResponse setMenu(@Valid MenuRequest request, StoreEntity store, UserDetailsImpl loginUser) {
         MenuEntity menuEntity = new MenuEntity(request, store);
+
+        if (!loginUser.hasPermission(menuEntity.getStoreEntity().getOwner().getUsername())) {
+            throw new AccessDeniedException("접근 권한이 없습니다.");
+        }
+        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.OWNER));
+
         if (Boolean.TRUE.equals(request.getAiDescription())) {
             AiRequest aiRequest = new AiRequest();
             aiRequest.setPrompt(request.getAiPrompt());
@@ -105,6 +119,14 @@ public class MenuServiceV1 {
             throw new IllegalArgumentException("메뉴 없음." + id);
         }
         return menuEntity;
+    }
+
+    private void validateUsrAuthority(UserDetailsImpl loginUser, EnumSet<UserRoleEnum> requireAuthorities) {
+        UserEntity user = userRepository.findById(loginUser.getUsername()).orElseThrow(() -> new IllegalArgumentException("해당 사용자 없음"));
+
+        if (!requireAuthorities.contains(user.getRole())) {
+            throw new AccessDeniedException("권한 없음");
+        }
     }
 
 }

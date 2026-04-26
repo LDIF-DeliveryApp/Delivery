@@ -19,6 +19,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
+@Secured({
+        UserRoleEnum.Authority.CUSTOMER,
+        UserRoleEnum.Authority.OWNER,
+        UserRoleEnum.Authority.MANAGER,
+        UserRoleEnum.Authority.MASTER
+})
 @RequestMapping("/api/v1/areas")
 @RequiredArgsConstructor
 public class AreaControllerV1 {
@@ -28,9 +34,9 @@ public class AreaControllerV1 {
     //지역 생성
     @PostMapping
     @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER})
-    public ResponseEntity<CommonResponse<AreaResponse>> setArea(@Valid @RequestBody AreaRequest request) {
+    public ResponseEntity<CommonResponse<AreaResponse>> setArea(@Valid @RequestBody AreaRequest request, @AuthenticationPrincipal UserDetailsImpl loginUser) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", areaServiceV1.setArea(request)));
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", areaServiceV1.setArea(request, loginUser)));
     }
 
     //지역 조회
@@ -58,9 +64,9 @@ public class AreaControllerV1 {
     //지역 수정
     @PutMapping("/{areaId}")
     @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER})
-    public ResponseEntity<CommonResponse<AreaResponse>> updateArea(@PathVariable UUID areaId, @Valid @RequestBody AreaRequest request) {
+    public ResponseEntity<CommonResponse<AreaResponse>> updateArea(@PathVariable UUID areaId, @Valid @RequestBody AreaRequest request, @AuthenticationPrincipal UserDetailsImpl loginUser) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", areaServiceV1.updateArea(areaId, request)));
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", areaServiceV1.updateArea(areaId, request, loginUser)));
     }
 
     //지역 삭제
@@ -74,8 +80,8 @@ public class AreaControllerV1 {
 
     @PatchMapping("/{areaId}")
     @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER})
-    public ResponseEntity<CommonResponse<AreaResponse>> toggleActive(@PathVariable UUID areaId) {
+    public ResponseEntity<CommonResponse<AreaResponse>> toggleActive(@PathVariable UUID areaId, @AuthenticationPrincipal UserDetailsImpl loginUser) {
         return ResponseEntity.status(HttpStatus.OK)
-                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", areaServiceV1.toggleActive(areaId)));
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", areaServiceV1.toggleActive(areaId, loginUser)));
     }
 }

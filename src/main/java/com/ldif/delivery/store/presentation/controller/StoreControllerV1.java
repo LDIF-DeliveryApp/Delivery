@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -119,6 +120,12 @@ public class StoreControllerV1 {
 
     //메뉴 목록 조회
     @GetMapping("/{storeId}/menus")
+    @Secured({
+            UserRoleEnum.Authority.CUSTOMER,
+            UserRoleEnum.Authority.OWNER,
+            UserRoleEnum.Authority.MANAGER,
+            UserRoleEnum.Authority.MASTER
+    })
     public ResponseEntity<CommonResponse<PageResponseDto<MenuResponse>>> getMenus(
             @RequestParam("keyword") String keyword,
             @RequestParam(value = "page", defaultValue = "0") int page,

@@ -7,12 +7,17 @@ import com.ldif.delivery.ai.infrastructure.api.gemini.dto.response.GeminiRespons
 import com.ldif.delivery.ai.presentation.dto.AiRequest;
 import com.ldif.delivery.ai.presentation.dto.AiResponse;
 import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
-import jakarta.validation.Valid;
+import com.ldif.delivery.user.domain.entity.UserEntity;
+import com.ldif.delivery.user.domain.entity.UserRoleEnum;
+import com.ldif.delivery.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.EnumSet;
 
 @Service
 @RequiredArgsConstructor
@@ -21,14 +26,26 @@ import org.springframework.validation.annotation.Validated;
 public class AiServiceV1 {
 
     private final AiRequestLogRepository aiRequestLogRepository;
+    private final UserRepository userRepository;
     private final GeminiClient geminiClient;
 
     @Transactional
-    public AiResponse setDescription(@Valid AiRequest aiRequest, @AuthenticationPrincipal UserDetailsImpl loginUser) {
+    public AiResponse setDescription(AiRequest aiRequest, @AuthenticationPrincipal UserDetailsImpl loginUser) {
+
+        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.OWNER));
+
         GeminiResponseDto result = geminiClient.call(aiRequest.getPrompt());
         AiRequestLogEntity aiRequestLogEntity = new AiRequestLogEntity(aiRequest, loginUser);
         aiRequestLogEntity.setAiResponse(result);
         aiRequestLogRepository.save(aiRequestLogEntity);
         return new AiResponse(aiRequestLogEntity);
+    }
+
+    private void validateUsrAuthority(UserDetailsImpl loginUser, EnumSet<UserRoleEnum> requireAuthorities) {
+        UserEntity user = userRepository.findById(loginUser.getUsername()).orElseThrow(() -> new IllegalArgumentException("해당 사용자 없음"));
+
+        if (!requireAuthorities.contains(user.getRole())) {
+            throw new AccessDeniedException("권한 없음");
+        }
     }
 }

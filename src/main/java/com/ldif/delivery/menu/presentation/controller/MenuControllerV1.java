@@ -17,6 +17,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
+@Secured({
+        UserRoleEnum.Authority.CUSTOMER,
+        UserRoleEnum.Authority.OWNER,
+        UserRoleEnum.Authority.MANAGER,
+        UserRoleEnum.Authority.MASTER
+})
 @RequestMapping("/api/v1/menus")
 @RequiredArgsConstructor
 public class MenuControllerV1 {

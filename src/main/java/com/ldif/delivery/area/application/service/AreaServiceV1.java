@@ -5,17 +5,21 @@ import com.ldif.delivery.area.domain.repository.AreaRepository;
 import com.ldif.delivery.area.persentation.dto.AreaRequest;
 import com.ldif.delivery.area.persentation.dto.AreaResponse;
 import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
-import jakarta.validation.Valid;
+import com.ldif.delivery.user.domain.entity.UserEntity;
+import com.ldif.delivery.user.domain.entity.UserRoleEnum;
+import com.ldif.delivery.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,10 +30,14 @@ import java.util.UUID;
 public class AreaServiceV1 {
 
     private final AreaRepository areaRepository;
+    private final UserRepository userRepository;
 
     //지역 생성
     @Transactional
-    public AreaResponse setArea(@Valid AreaRequest request) {
+    public AreaResponse setArea(AreaRequest request, UserDetailsImpl loginUser) {
+
+        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.MANAGER, UserRoleEnum.MASTER));
+
         AreaEntity areaEntity = new AreaEntity(request);
         areaRepository.save(areaEntity);
         return new AreaResponse(areaEntity);
@@ -55,7 +63,10 @@ public class AreaServiceV1 {
     }
 
     //지역 수정
-    public AreaResponse updateArea(UUID areaId, @Valid AreaRequest request) {
+    public AreaResponse updateArea(UUID areaId, AreaRequest request, UserDetailsImpl loginUser) {
+
+        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.MANAGER, UserRoleEnum.MASTER));
+
         AreaEntity areaEntity = findAreaById(areaId);
         areaEntity.update(request);
         return new AreaResponse(areaEntity);
@@ -63,12 +74,18 @@ public class AreaServiceV1 {
 
     //지역 삭제
     public void deleteArea(UUID areaId, UserDetailsImpl loginUser) {
+
+        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.MASTER));
+
         AreaEntity areaEntity = findAreaById(areaId);
         areaEntity.delete(loginUser);
     }
 
     // 지역 활성화/비활성화
-    public AreaResponse toggleActive(UUID areaId) {
+    public AreaResponse toggleActive(UUID areaId, UserDetailsImpl loginUser) {
+
+        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.MANAGER, UserRoleEnum.MASTER));
+
         AreaEntity areaEntity = findAreaById(areaId);
         areaEntity.toggleActive();
         return new AreaResponse(areaEntity);
@@ -83,4 +100,12 @@ public class AreaServiceV1 {
         return areaEntity;
     }
 
+
+    private void validateUsrAuthority(UserDetailsImpl loginUser, EnumSet<UserRoleEnum> requireAuthorities) {
+        UserEntity user = userRepository.findById(loginUser.getUsername()).orElseThrow(() -> new IllegalArgumentException("해당 사용자 없음"));
+
+        if (!requireAuthorities.contains(user.getRole())) {
+            throw new AccessDeniedException("권한 없음");
+        }
+    }
 }
