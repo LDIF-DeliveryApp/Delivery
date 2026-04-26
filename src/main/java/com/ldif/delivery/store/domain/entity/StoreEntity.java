@@ -1,10 +1,14 @@
 package com.ldif.delivery.store.domain.entity;
 
+import com.ldif.delivery.area.domain.entity.AreaEntity;
+import com.ldif.delivery.category.domain.entity.CategoryEntity;
 import com.ldif.delivery.global.infrastructure.entity.BaseEntity;
+import com.ldif.delivery.user.domain.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -16,8 +20,20 @@ public class StoreEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "store_id")
+    @Column(name = "store_id", updatable = false, nullable = false)
     private UUID storeId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private UserEntity owner;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private CategoryEntity category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "area_id", nullable = false)
+    private AreaEntity area;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -34,14 +50,23 @@ public class StoreEntity extends BaseEntity {
     @Column(name = "is_hidden")
     private boolean isHidden = false;
 
-    public StoreEntity(String name, String address, String phone) {
+    public StoreEntity(
+            UserEntity owner,
+            CategoryEntity category,
+            AreaEntity area,
+            String name,
+            String address,
+            String phone
+    ) {
+        this.owner = owner;
+        this.category = category;
+        this.area = area;
         this.name = name;
         this.address = address;
         this.phone = phone;
         this.isHidden = false;
         this.averageRating = BigDecimal.valueOf(0.0);
     }
-
 
     public void updateStore(String name, String address, String phone) {
         this.name = name;
