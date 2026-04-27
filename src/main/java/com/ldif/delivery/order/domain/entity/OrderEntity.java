@@ -1,6 +1,8 @@
 package com.ldif.delivery.order.domain.entity;
 
 import com.ldif.delivery.global.infrastructure.entity.BaseEntity;
+import com.ldif.delivery.store.domain.entity.StoreEntity;
+import com.ldif.delivery.user.domain.entity.UserEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
@@ -25,14 +27,19 @@ public class OrderEntity extends BaseEntity {
     private UUID orderId;
 
     // FK → p_user.username
-    @Column(name = "customer_id", nullable = false, length = 50)    //명세서 10 -> 50
-    private String customerId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", nullable = false)
+    private UserEntity customer;
 
     // FK → p_store.store_id
-    @Column(name = "store_id", nullable = false)
-    private UUID storeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id", nullable = false)
+    private StoreEntity store;
 
     // FK → p_address.address_id
+    // ID → Entity 참조로 전환 예정 (AddressEntity 아직 없음)
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "address_id")
     @Column(name = "address_id")
     private UUID addressId;
 
@@ -58,14 +65,14 @@ public class OrderEntity extends BaseEntity {
     // 비즈니스 메서드
     // ───────────────────────────────────────────────────────────
 
-    public static OrderEntity create(
-            String customerId, UUID storeId, UUID addressId,
+    public static OrderEntity create(   // UUID addressId → AddressEntity address
+            UserEntity customer, StoreEntity store, UUID addressId,
             OrderType orderType, String request,
             List<OrderItemEntity> items, Integer totalPrice
     ) {
         OrderEntity order = OrderEntity.builder()
-                .customerId(customerId)
-                .storeId(storeId)
+                .customer(customer)
+                .store(store)
                 .addressId(addressId)
                 .orderType(orderType)
                 .status(OrderStatus.PENDING)

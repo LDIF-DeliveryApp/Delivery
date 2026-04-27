@@ -35,10 +35,10 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom{
 
         // 동적 필터
         if (customerId != null) {
-            builder.and(order.customerId.eq(customerId));
+            builder.and(order.customer.username.eq(customerId));
         }
         if (storeId != null) {
-            builder.and(order.storeId.eq(storeId));
+            builder.and(order.store.storeId.eq(storeId));
         }
         if (status != null) {
             builder.and(order.status.eq(status));
