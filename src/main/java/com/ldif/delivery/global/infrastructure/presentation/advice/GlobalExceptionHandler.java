@@ -2,6 +2,8 @@ package com.ldif.delivery.global.infrastructure.presentation.advice;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.ldif.delivery.global.infrastructure.presentation.dto.CommonResponse;
+import com.ldif.delivery.order.exception.OrderBusinessException;
+import com.ldif.delivery.order.exception.OrderNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -177,5 +179,27 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(CommonResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), "서버 내부 오류가 발생했습니다.", 
                         List.of(new CommonResponse.FieldErrorDto("server", e.getMessage() != null ? e.getMessage() : "Unknown error"))));
+    }
+
+    /**
+     * 주문(Order) 예외 처리
+     * 404(리소스 없음)
+     */
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<CommonResponse<?>> handleOrderNotFoundException(OrderNotFoundException e) {
+        log.error("OrderNotFoundException 발생: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(CommonResponse.error(HttpStatus.NOT_FOUND.value(), e.getMessage(), null));
+    }
+
+    /**
+     * 주문(Order) 예외 처리
+     * 400(비즈니스 규칙 위반)
+     */
+    @ExceptionHandler(OrderBusinessException.class)
+    public ResponseEntity<CommonResponse<?>> handleOrderBusinessException(OrderBusinessException e) {
+        log.error("OrderBusinessException 발생: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null));
     }
 }
