@@ -92,6 +92,7 @@ public class OrderEntity extends BaseEntity {
     }
 
     public void updateRequestByMaster(String request) {
+
         this.request = request;
     }
 

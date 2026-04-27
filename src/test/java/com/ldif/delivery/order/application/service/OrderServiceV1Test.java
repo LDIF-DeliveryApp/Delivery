@@ -19,12 +19,17 @@ import com.ldif.delivery.store.domain.entity.StoreEntity;
 import com.ldif.delivery.store.domain.repository.StoreRepository;
 import com.ldif.delivery.user.domain.entity.UserEntity;
 import com.ldif.delivery.user.domain.repository.UserRepository;
+import org.hibernate.query.Order;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +39,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class OrderServiceV1Test {
 
     @Mock OrderRepository   orderRepository;
@@ -63,44 +69,58 @@ public class OrderServiceV1Test {
     @BeforeEach
     void setUp() {
         // Mock Entity 설정
+        mockCustomer    = mock(UserEntity.class);
+        mockStore       = mock(StoreEntity.class);
+        mockAddress     = mock(Address.class);
+        mockMenu1       = mock(MenuEntity.class);
+        mockMenu2       = mock(MenuEntity.class);
+        mockOrder       = mock(OrderEntity.class);
 
-        mockCustomer = mock(UserEntity.class);
+        // 사용자 ID 설정
         given(mockCustomer.getUsername()).willReturn(CUSTOMER_ID);
 
-        mockStore = mock(StoreEntity.class);
+        // 가게 설정
         given(mockStore.getStoreId()).willReturn(STORE_ID);
         given(mockStore.isHidden()).willReturn(false);
-        given(mockStore.getOwner()).willReturn(mock(UserEntity.class));
-        given(mockStore.getOwner().getUsername()).willReturn(OWNER_ID);
+        // storeRepository가 가게를 찾을 수 있도록 설정
+        given(storeRepository.findById(any(UUID.class))).willReturn(Optional.of(mockStore));
 
-        mockAddress = mock(Address.class);
-        given(mockAddress.getAddressId()).willReturn(ADDRESS_ID);
+        // 점주 검증
+        UserEntity mockOwner = mock(UserEntity.class);
+        given(mockOwner.getUsername()).willReturn(OWNER_ID);
+        given(mockStore.getOwner()).willReturn(mockOwner);
 
-        mockMenu1 = mock(MenuEntity.class);
+        // 메뉴1 설정
         given(mockMenu1.getMenuId()).willReturn(MENU_ID_1);
-        given(mockMenu1.getStoreId()).willReturn(STORE_ID);
-        given(mockMenu1.getPrice()).willReturn(10000);
+        given(mockMenu1.getStoreEntity()).willReturn(mockStore);
+        given(mockMenu1.getDeletedAt()).willReturn(null);
         given(mockMenu1.getIsHidden()).willReturn(false);
+        given(mockMenu1.getPrice()).willReturn(10000);
+        given(mockMenu1.getStoreEntity()).willReturn(mockStore);
 
-        mockMenu2 = mock(MenuEntity.class);
+        // 메뉴2 설정
         given(mockMenu2.getMenuId()).willReturn(MENU_ID_2);
-        given(mockMenu2.getStoreId()).willReturn(STORE_ID);
-        given(mockMenu2.getPrice()).willReturn(5000);
+        given(mockMenu2.getStoreEntity()).willReturn(mockStore);
+        given(mockMenu2.getDeletedAt()).willReturn(null);
         given(mockMenu2.getIsHidden()).willReturn(false);
+        given(mockMenu2.getPrice()).willReturn(5000);
+        given(mockMenu2.getStoreEntity()).willReturn(mockStore);
 
-        // mockOrder 생성
-        mockOrder = OrderEntity.create(
-                mockCustomer,
-                mockStore,
-                mockAddress,
-                OrderType.ONLINE,
-                "덜 맵게 조리 부탁드립니다.",
-                List.of(
-                        OrderItemEntity.of(mockMenu1, 2, 10000),
-                        OrderItemEntity.of(mockMenu2, 1, 5000)
-                ),
-                25000
+        // 주문 설정
+        List<OrderItemEntity> mockItems = List.of(
+                OrderItemEntity.of(mockMenu1, 2, 10000),
+                OrderItemEntity.of(mockMenu2, 1, 5000)
         );
+        given(mockOrder.getCustomer()).willReturn(mockCustomer);
+        given(mockOrder.getStore()).willReturn(mockStore);
+        given(mockOrder.getAddress()).willReturn(mockAddress);
+        given(mockOrder.getOrderType()).willReturn(OrderType.ONLINE);
+        given(mockOrder.getRequest()).willReturn("덜 맵게 조리 부탁드립니다.");
+        given(mockOrder.getOrderItems()).willReturn(mockItems);
+        given(mockOrder.getTotalPrice()).willReturn(25000);
+        given(mockOrder.getCreatedAt()).willReturn(LocalDateTime.now());
+        given(mockOrder.getStatus()).willReturn(OrderStatus.PENDING);
+
     }
 
     // ───────────────────────────────────────────────────────────
@@ -223,8 +243,10 @@ public class OrderServiceV1Test {
         @Test
         @DisplayName("다른 가게 메뉴 포함 시 예외 발생")
         void failWhenMenuNotBelongToStore() {
-            given(mockMenu2.getStoreId())
-                    .willReturn(UUID.randomUUID()); // 다른 가게
+            StoreEntity otherStore = mock(StoreEntity.class);
+            given(otherStore.getStoreId()).willReturn(UUID.randomUUID());   //다른 가게
+            given(mockMenu2.getStoreEntity()).willReturn(otherStore);
+
             given(userRepository.findById(CUSTOMER_ID))
                     .willReturn(Optional.of(mockCustomer));
             given(storeRepository.findById(STORE_ID))
@@ -321,6 +343,14 @@ public class OrderServiceV1Test {
         @Test
         @DisplayName("CUSTOMER 본인 PENDING 주문 요청사항 수정 성공")
         void customerUpdateRequestSuccess() {
+
+            //실제 로직을 수행해서 필드 값 변화
+            doCallRealMethod().when(mockOrder).updateRequest(anyString());
+            doCallRealMethod().when(mockOrder).getRequest();
+
+            ReflectionTestUtils.setField(mockOrder, "status", OrderStatus.PENDING);
+            ReflectionTestUtils.setField(mockOrder, "request", "덜 맵게 조리 부탁드립니다.");
+
             given(orderRepository.findActiveById(ORDER_ID))
                     .willReturn(Optional.of(mockOrder));
 
@@ -350,6 +380,7 @@ public class OrderServiceV1Test {
         @Test
         @DisplayName("MASTER는 PENDING 아닌 상태에서도 요청사항 수정 가능")
         void masterCanUpdateRequestAnyStatus() {
+
             mockOrder.changeStatus(OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(ORDER_ID))
                     .willReturn(Optional.of(mockOrder));
@@ -373,6 +404,13 @@ public class OrderServiceV1Test {
         @Test
         @DisplayName("OWNER 본인 가게 주문 상태 변경 성공")
         void ownerChangeStatusSuccess() {
+
+            // 실제 로직을 수행해서 필드 값 변화
+            doCallRealMethod().when(mockOrder).changeStatus(any());
+            doCallRealMethod().when(mockOrder).getStatus();
+
+            ReflectionTestUtils.setField(mockOrder, "status", OrderStatus.PENDING);
+
             given(orderRepository.findActiveById(ORDER_ID))
                     .willReturn(Optional.of(mockOrder));
 
@@ -388,9 +426,15 @@ public class OrderServiceV1Test {
         @Test
         @DisplayName("OWNER 타인 가게 주문 상태 변경 시 예외 발생")
         void ownerCannotChangeOtherStoreOrder() {
+            // 타인 가게 점주 생성
             UserEntity otherOwner = mock(UserEntity.class);
             given(otherOwner.getUsername()).willReturn("other_owner");
+
+            // 가게가 타인 점주 소유로 설정
             given(mockStore.getOwner()).willReturn(otherOwner);
+            given(mockStore.getStoreId()).willReturn(STORE_ID);
+
+            // 주문이 해당 가게 소속임을 설정
             given(orderRepository.findActiveById(ORDER_ID))
                     .willReturn(Optional.of(mockOrder));
 
@@ -405,16 +449,27 @@ public class OrderServiceV1Test {
         @Test
         @DisplayName("잘못된 상태 변화 시 예외 발생")
         void failWhenInvalidTransition() {
-            given(orderRepository.findActiveById(ORDER_ID))
-                    .willReturn(Optional.of(mockOrder));
+
+            // Mock 객체가 실제 changeStatus 로직을 실행하도록 설정
+            doCallRealMethod().when(mockOrder).changeStatus(any(OrderStatus.class));
+
+            // changeStatus 내부에서 this.status를 참조하므로 getStatus도 실제 로직을 타게 함
+            doCallRealMethod().when(mockOrder).getStatus();
+
+            // 현재 상태를 PENDING으로 설정
+            ReflectionTestUtils.setField(mockOrder, "status", OrderStatus.PENDING);
+            given(orderRepository.findActiveById(ORDER_ID)).willReturn(Optional.of(mockOrder));
 
             // PENDING -> DELIVERING 건너 뜀
-            assertThatThrownBy(() -> orderService.changeStatus(
-                    ORDER_ID,
-                    new OrderStatusRequest(OrderStatus.DELIVERING),
-                    OWNER_ID,
-                    "MANAGER"))
-                    .isInstanceOf(OrderBusinessException.class);
+            assertThatThrownBy(() ->
+                    orderService.changeStatus(
+                            ORDER_ID,
+                            new OrderStatusRequest(OrderStatus.DELIVERING),
+                            OWNER_ID,
+                            "MANAGER"))
+                    .isInstanceOf(OrderBusinessException.class)
+                    .hasMessageContaining("PENDING' 상태에서 'DELIVERING'로 변경할 수 없습니다.");
+
         }
     }
 
@@ -428,13 +483,19 @@ public class OrderServiceV1Test {
         @Test
         @DisplayName("CUSTOMER 5분 이내 취소 성공")
         void customerCancelWithinLimit() {
+
+            // 실제 로직을 수행해서 필드 값 변화
+            doCallRealMethod().when(mockOrder).changeStatus(any(OrderStatus.class));
+            doCallRealMethod().when(mockOrder).getStatus();
+
+            ReflectionTestUtils.setField(mockOrder, "status", OrderStatus.PENDING);
+
             given(orderRepository.findActiveById(ORDER_ID))
                     .willReturn(Optional.of(mockOrder));
 
-            OrderResponse response = orderService.cancelOrder(
-                    ORDER_ID, CUSTOMER_ID, "CUSTOMER");
+            OrderResponse response = orderService.cancelOrder(ORDER_ID, CUSTOMER_ID, "CUSTOMER");
 
-            assertThat(response.status()).isEqualTo("CANCELLED");
+            assertThat(response.status()).isEqualTo("CANCELED");
         }
 
         @Test
@@ -451,12 +512,9 @@ public class OrderServiceV1Test {
         @Test
         @DisplayName("CUSTOMER 5분 초과 시 예외 발생")
         void failWhenOverCancelLimit() {
-            // ReflectionTestUtils로 createdAt 강제 주입
-            org.springframework.test.util.ReflectionTestUtils.setField(
-                    mockOrder,
-                    "createdAt",
-                    java.time.LocalDateTime.now().plusMinutes(6)   // 6분 후
-            );
+            // mock createdAt 6분 전 설정
+            given(mockOrder.getCreatedAt())
+                    .willReturn(LocalDateTime.now().minusMinutes(6));
 
             given(orderRepository.findActiveById(ORDER_ID))
                     .willReturn(Optional.of(mockOrder));
@@ -476,7 +534,7 @@ public class OrderServiceV1Test {
             org.springframework.test.util.ReflectionTestUtils.setField(
                     mockOrder,
                     "createdAt",
-                    java.time.LocalDateTime.now().minusMinutes(10)   // 10분 후
+                    java.time.LocalDateTime.now().minusMinutes(10)   // 10분 전
             );
 
             given(orderRepository.findActiveById(ORDER_ID))
@@ -500,6 +558,14 @@ public class OrderServiceV1Test {
         void masterSoftDeleteSuccess() {
             given(orderRepository.findActiveById(ORDER_ID))
                     .willReturn(Optional.of(mockOrder));
+
+            // [상태 변경 예약] softDelete가 호출되면 getDeletedAt 등의 값 반환
+            doAnswer(invocation -> {
+                String deleter = invocation.getArgument(0); // 첫 번째 인자(masterUsername) 가져오기
+                given(mockOrder.getDeletedAt()).willReturn(LocalDateTime.now());
+                given(mockOrder.getDeletedBy()).willReturn(deleter);
+                return null;
+            }).when(mockOrder).softDelete(anyString());
 
             orderService.deleteOrder(ORDER_ID, "master1");
 

@@ -60,7 +60,7 @@ public class OrderServiceV1 {
                         "존재하지 않는 가게입니다. storeId=" + req.storeId()));
 
         if (store.isHidden()) {
-            throw new IllegalArgumentException("현재 운영 중이지 않은 가게입니다.");
+            throw new OrderBusinessException("현재 운영 중이지 않은 가게입니다.");
         }
 
         // 3. 배송지 조회 ( 선택값, null허용)
@@ -91,7 +91,7 @@ public class OrderServiceV1 {
 
         // 6. 메뉴가 해당 가게 소속인지 검증
         menus.forEach(menu -> {
-            if (!menu.getStoreId().equals(req.storeId())) {
+            if (!menu.getStoreEntity().getStoreId().equals(req.storeId())) {
                 throw new IllegalArgumentException(
                         "해당 가게의 메뉴가 아닙니다. menuId=" + menu.getMenuId());
             }
@@ -107,7 +107,7 @@ public class OrderServiceV1 {
 
             // 7-2. 숨김 여부
             if (Boolean.TRUE.equals(menu.getIsHidden())) {
-                throw new IllegalArgumentException(
+                throw new OrderBusinessException(
                         "현재 주문할 수 없는 메뉴입니다. menuId=" + menu.getMenuId());
             }
         });
