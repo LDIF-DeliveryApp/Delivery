@@ -2,6 +2,7 @@ package com.ldif.delivery.payment.application.service;
 
 import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import com.ldif.delivery.payment.domain.entity.PaymentEntity;
+import com.ldif.delivery.payment.domain.entity.PaymentStatus;
 import com.ldif.delivery.payment.domain.repository.PaymentRepository;
 import com.ldif.delivery.payment.presentation.dto.PaymentResponse;
 import com.ldif.delivery.payment.presentation.dto.PaymentStatusResponse;
@@ -48,7 +49,8 @@ public class PaymentServiceV1 {
         if (status == null || status.isBlank()) {
             payments = paymentRepository.findAllByDeletedAtIsNull(pageable);
         } else {
-            payments = paymentRepository.findByStatusAndDeletedAtIsNull(status, pageable);
+            PaymentStatus paymentStatus = PaymentStatus.valueOf(status.toUpperCase());
+            payments = paymentRepository.findByStatusAndDeletedAtIsNull(paymentStatus, pageable);
         }
 
         return payments.map(PaymentResponse::new);
@@ -99,11 +101,11 @@ public class PaymentServiceV1 {
             throw new IllegalStateException("삭제된 결제입니다.");
         }
 
-        if ("CANCELLED".equals(payment.getStatus())) {
+        if (payment.isCancelled()) {
             throw new IllegalStateException("이미 취소된 결제입니다.");
         }
 
-        if ("COMPLETED".equals(payment.getStatus())
+        if (payment.isCompleted()
                 && payment.getCreatedAt().plusMinutes(5).isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("결제 후 5분이 지나 취소할 수 없습니다.");
         }
