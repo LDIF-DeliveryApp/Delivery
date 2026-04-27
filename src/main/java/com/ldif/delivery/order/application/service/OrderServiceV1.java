@@ -1,5 +1,6 @@
 package com.ldif.delivery.order.application.service;
 
+import com.ldif.delivery.global.infrastructure.presentation.dto.PageResponseDto;
 import com.ldif.delivery.menu.domain.entity.MenuEntity;
 import com.ldif.delivery.menu.domain.repository.MenuRepository;
 import com.ldif.delivery.order.domain.entity.OrderEntity;
@@ -63,12 +64,12 @@ public class OrderServiceV1 {
         });
 
         // 4. 메뉴가 해당 가게 소속인지 검증
-//        menus.forEach(menu -> {
-//            if (!menu.getStoreId().equals(req.storeId())) {
-//                throw new IllegalArgumentException(
-//                        "해당 가게의 메뉴가 아닙니다. menuId=" + menu.getMenuId());
-//            }
-//        });
+        menus.forEach(menu -> {
+            if (!menu.getStoreId().equals(req.storeId())) {
+                throw new IllegalArgumentException(
+                        "해당 가게의 메뉴가 아닙니다. menuId=" + menu.getMenuId());
+            }
+        });
 
         // 5. 메뉴 주문 가능 상태 검증 (삭제, 숨김)
         menus.forEach(menu -> {
@@ -123,7 +124,7 @@ public class OrderServiceV1 {
     // ───────────────────────────────────────────────────────────
     // 주문 목록 조회
     // ───────────────────────────────────────────────────────────
-    public PageResponse<OrderResponse> getOrder(
+    public PageResponseDto<OrderResponse> getOrder(
             String requesterId,
             String requesterRole,
             UUID storeId,
@@ -149,7 +150,7 @@ public class OrderServiceV1 {
         Page<OrderEntity> page = orderRepository.searchOrders(
                 customerIdFilter, storeIdFilter, status, pageable);
 
-        return PageResponse.from(page.map(OrderResponse::from));
+        return new PageResponseDto<>(page.map(OrderResponse::from));
     }
 
     // ───────────────────────────────────────────────────────────

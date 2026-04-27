@@ -92,6 +92,7 @@ public class MenuServiceV1 {
     public Page<MenuResponse> getMenus(Pageable pageable, String keyword, UUID storeId) {
         Page<MenuEntity> menuList;
 
+        // FK storeEntity의 id와 일치 항목 모두 찾아 name에 keyword 포함된 목록 검색, idDeleted가 false인 값들만 반환
         menuList = menuRepository.findAllByStoreEntity_StoreIdAndNameContainingIgnoreCaseAndIsDeletedFalse(storeId, keyword, pageable);
 
         return menuList.map(MenuResponse::new);

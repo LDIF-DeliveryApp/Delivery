@@ -1,5 +1,7 @@
 package com.ldif.delivery.order.presentation.controller;
 
+import com.ldif.delivery.global.infrastructure.presentation.dto.CommonResponse;
+import com.ldif.delivery.global.infrastructure.presentation.dto.PageResponseDto;
 import com.ldif.delivery.order.application.service.OrderServiceV1;
 import com.ldif.delivery.order.domain.entity.OrderStatus;
 import com.ldif.delivery.order.presentation.dto.*;
@@ -18,12 +20,11 @@ import java.util.Set;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
 public class OrderControllerV1 {
 
     private final OrderServiceV1 orderService;
-
     private static final Set<Integer> ALLOWED_SIZE = Set.of(10, 30, 50);
 
     // ───────────────────────────────────────────────────────────
@@ -33,14 +34,15 @@ public class OrderControllerV1 {
     // ───────────────────────────────────────────────────────────
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<OrderResponse> createOrder(
+    public ResponseEntity<CommonResponse<OrderResponse>> createOrder(
             @Valid @RequestBody OrderCreateRequest req,
-            @AuthenticationPrincipal UserDetails userDetails
-    ){
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        String customerId = userDetails.getUsername();
-        OrderResponse response = orderService.createOrder(req, customerId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        OrderResponse data = orderService.createOrder(req, userDetails.getUsername());
+
+        return ResponseEntity
+                .status(201)
+                .body(CommonResponse.success(201, "주문이 생성되었습니다.", data));
     }
 
     // ───────────────────────────────────────────────────────────
@@ -50,7 +52,7 @@ public class OrderControllerV1 {
     // ───────────────────────────────────────────────────────────
     @GetMapping
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
-    public ResponseEntity<PageResponse<OrderResponse>> getOrders(
+    public ResponseEntity<CommonResponse<PageResponseDto<OrderResponse>>> getOrders(
             @RequestParam(required = false) UUID storeId,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
@@ -63,7 +65,8 @@ public class OrderControllerV1 {
 
         String[] sortParts = sort.split(",");
         Sort pageSort = Sort.by(
-                Sort.Direction.fromString(sortParts.length > 1 ? sortParts[1] : "DESC"), sortParts[0]
+                Sort.Direction.fromString(sortParts.length > 1 ? sortParts[1] : "DESC"),
+                sortParts[0]
         );
 
         PageRequest pageable = PageRequest.of(page, size, pageSort);
@@ -74,10 +77,11 @@ public class OrderControllerV1 {
         }
 
         String role = extractRole(userDetails);
-        PageResponse<OrderResponse> response = orderService.getOrder(
+        PageResponseDto<OrderResponse> data = orderService.getOrder(
                 userDetails.getUsername(), role, storeId, orderStatus, pageable);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity
+                .ok(CommonResponse.success(200,"주문 목록 조회 성공", data));
     }
 
     // ───────────────────────────────────────────────────────────
@@ -87,14 +91,15 @@ public class OrderControllerV1 {
     // ───────────────────────────────────────────────────────────
     @GetMapping("/{orderId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'OWNER', 'MANAGER', 'MASTER')")
-    public ResponseEntity<OrderResponse> getOrder(
+    public ResponseEntity<CommonResponse<OrderResponse>> getOrder(
             @PathVariable UUID orderId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String role = extractRole(userDetails);
+        OrderResponse data = orderService.getOrder(orderId, userDetails.getUsername(), role);
 
-        return ResponseEntity.ok(
-                orderService.getOrder(orderId, userDetails.getUsername(), role));
+        return ResponseEntity
+                .ok(CommonResponse.success(200, "주문 상세 조회 성공", data));
     }
 
     // ───────────────────────────────────────────────────────────
@@ -104,14 +109,16 @@ public class OrderControllerV1 {
     // ──────────────────────────────────────────────────────────
     @PutMapping("/{orderId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MASTER')")
-    public ResponseEntity<OrderResponse> updateOrder(
+    public ResponseEntity<CommonResponse<OrderResponse>> updateOrder(
             @PathVariable UUID orderId,
             @RequestBody OrderUpdateRequest req,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String role = extractRole(userDetails);
-        return ResponseEntity.ok(
-                orderService.updateOrder(orderId, req, userDetails.getUsername(), role));
+        OrderResponse data = orderService.updateOrder(orderId, req, userDetails.getUsername(), role);
+
+        return ResponseEntity
+                .ok(CommonResponse.success(200, "주문 요청사항이 수정되었습니다.", data));
     }
 
     // ───────────────────────────────────────────────────────────
@@ -121,14 +128,15 @@ public class OrderControllerV1 {
     // ──────────────────────────────────────────────────────────
     @PatchMapping("/{orderId}/status")
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
-    public ResponseEntity<OrderResponse> changeStatus(
+    public ResponseEntity<CommonResponse<OrderResponse>> changeStatus(
             @PathVariable UUID orderId,
             @Valid @RequestBody OrderStatusRequest req,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String role = extractRole(userDetails);
-        return ResponseEntity.ok(
-                orderService.changeStatus(orderId, req, userDetails.getUsername(), role));
+        OrderResponse data = orderService.changeStatus(orderId, req, userDetails.getUsername(), role);
+        return ResponseEntity
+                .ok(CommonResponse.success(200, "주문 상태가 변경되었습니다.", data));
     }
 
     // ───────────────────────────────────────────────────────────
@@ -138,13 +146,14 @@ public class OrderControllerV1 {
     // ──────────────────────────────────────────────────────────
     @PatchMapping("/{orderId}/cancel")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MASTER')")
-    public ResponseEntity<OrderResponse> cancelOrder(
+    public ResponseEntity<CommonResponse<OrderResponse>> cancelOrder(
             @PathVariable UUID orderId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String role = extractRole(userDetails);
+        OrderResponse data = orderService.cancelOrder(orderId, userDetails.getUsername(), role);
         return ResponseEntity.ok(
-                orderService.cancelOrder(orderId, userDetails.getUsername(), role));
+                CommonResponse.success(200, "주문이 취소되었습니다.", data));
     }
 
     // ───────────────────────────────────────────────────────────
@@ -154,12 +163,13 @@ public class OrderControllerV1 {
     // ──────────────────────────────────────────────────────────
     @DeleteMapping("/{orderId}")
     @PreAuthorize("hasAnyRole('MASTER')")
-    public ResponseEntity<Void> deleteOrder(
+    public ResponseEntity<CommonResponse<Void>> deleteOrder(
             @PathVariable UUID orderId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         orderService.deleteOrder(orderId, userDetails.getUsername());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .ok(CommonResponse.success(200, "주문이 삭제되었습니다.", null));
     }
 
     // 역할 추출
