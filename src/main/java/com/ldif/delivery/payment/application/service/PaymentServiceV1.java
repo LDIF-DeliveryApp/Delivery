@@ -6,10 +6,15 @@ import com.ldif.delivery.payment.domain.repository.PaymentRepository;
 import com.ldif.delivery.payment.presentation.dto.PaymentResponse;
 import com.ldif.delivery.payment.presentation.dto.PaymentStatusResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,11 +26,25 @@ public class PaymentServiceV1 {
 
     // 결제 목록 조회
     @Transactional(readOnly = true)
-    public List<PaymentResponse> getPayments() {
-        return paymentRepository.findAll().stream()
-                .filter(payment -> payment.getDeletedAt() == null)
-                .map(PaymentResponse::new)
-                .toList();
+    public Page<PaymentResponse> getPayments(String status, int page, int size, String sort) {
+        Sort.Direction direction = sort.equalsIgnoreCase("ASC")
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        List<Integer> allowedSize = Arrays.asList(10, 30, 50);
+        int setSize = allowedSize.contains(size) ? size : 10;
+
+        Pageable pageable = PageRequest.of(page, setSize, Sort.by(direction, "createdAt"));
+
+        Page<PaymentEntity> payments;
+
+        if (status == null || status.isBlank()) {
+            payments = paymentRepository.findAllByDeletedAtIsNull(pageable);
+        } else {
+            payments = paymentRepository.findByStatusAndDeletedAtIsNull(status, pageable);
+        }
+
+        return payments.map(PaymentResponse::new);
     }
 
     // 결제 상세 조회
