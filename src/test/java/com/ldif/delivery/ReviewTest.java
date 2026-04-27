@@ -75,11 +75,6 @@ public class ReviewTest {
         lenient().when(loginUser.getUsername()).thenReturn(username);
         lenient().when(loginUser.hasPermission(username)).thenReturn(true);
 
-        mockOrder = mock(OrderEntity.class);
-        lenient().when(mockOrder.getCustomerId()).thenReturn(username);
-        lenient().when(mockOrder.getStoreId()).thenReturn(storeId);
-        lenient().when(mockOrder.getStatus()).thenReturn(OrderStatus.COMPLETED);
-
         mockStore = mock(StoreEntity.class);
         lenient().when(mockStore.getStoreId()).thenReturn(storeId);
         lenient().when(mockStore.getName()).thenReturn("가게이름");
@@ -87,6 +82,11 @@ public class ReviewTest {
         mockUser = mock(UserEntity.class);
         lenient().when(mockUser.getUsername()).thenReturn(username);
         lenient().when(mockUser.getNickname()).thenReturn("닉네임");
+
+        mockOrder = mock(OrderEntity.class);
+        lenient().when(mockOrder.getCustomer()).thenReturn(mockUser);
+        lenient().when(mockOrder.getStore()).thenReturn(mockStore);
+        lenient().when(mockOrder.getStatus()).thenReturn(OrderStatus.COMPLETED);
 
         mockReview = mock(ReviewEntity.class);
         lenient().when(mockReview.getReviewId()).thenReturn(reviewId);
@@ -108,8 +108,6 @@ public class ReviewTest {
             ReqReviewDto dto = new ReqReviewDto(5, "맛있어요!");
 
             given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(mockOrder));
-            given(userRepository.findByUsername(username)).willReturn(Optional.of(mockUser));
-            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
             given(reviewRepository.findByOrder_OrderId(orderId)).willReturn(Optional.empty());
 
             // Mock 객체를 save 반환값으로 사용해야 DTO 변환 시 NPE 안 남
@@ -138,44 +136,11 @@ public class ReviewTest {
         }
 
         @Test
-        @DisplayName("실패: 주문자를 찾을 수 없음")
-        void createReview_Fail_UserNotFound() {
-            // Given
-            ReqReviewDto dto = new ReqReviewDto(5, "맛있어요!");
-            given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(mockOrder));
-            given(userRepository.findByUsername(username)).willReturn(Optional.empty());
-
-            // When & Then
-            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
-                reviewService.createReview(orderId, dto, loginUser);
-            });
-            assertThat(e.getMessage()).isEqualTo("사용자를 찾을 수 없습니다.");
-        }
-
-        @Test
-        @DisplayName("실패: 가게를 찾을 수 없음")
-        void createReview_Fail_StoreNotFound() {
-            // Given
-            ReqReviewDto dto = new ReqReviewDto(5, "맛있어요!");
-            given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(mockOrder));
-            given(userRepository.findByUsername(username)).willReturn(Optional.of(mockUser));
-            given(storeRepository.findById(storeId)).willReturn(Optional.empty());
-
-            // When & Then
-            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
-                reviewService.createReview(orderId, dto, loginUser);
-            });
-            assertThat(e.getMessage()).isEqualTo("가게를 찾을 수 없습니다.");
-        }
-
-        @Test
         @DisplayName("실패: 작성자 권한 불일치")
         void createReview_Fail_AccessDenied() {
             // Given
             ReqReviewDto dto = new ReqReviewDto(5, "맛있어요!");
             given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(mockOrder));
-            given(userRepository.findByUsername(username)).willReturn(Optional.of(mockUser));
-            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
 
             // 권한 없음 설정
             given(loginUser.hasPermission(username)).willReturn(false);
@@ -193,8 +158,6 @@ public class ReviewTest {
             // Given
             ReqReviewDto dto = new ReqReviewDto(5, "맛있어요!");
             given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(mockOrder));
-            given(userRepository.findByUsername(username)).willReturn(Optional.of(mockUser));
-            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
 
             given(reviewRepository.findByOrder_OrderId(orderId)).willReturn(Optional.of(mockReview));
 
@@ -211,8 +174,6 @@ public class ReviewTest {
             // Given
             ReqReviewDto dto = new ReqReviewDto(5, "맛있어요!");
             given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(mockOrder));
-            given(userRepository.findByUsername(username)).willReturn(Optional.of(mockUser));
-            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
             given(reviewRepository.findByOrder_OrderId(orderId)).willReturn(Optional.empty());
 
             given(mockOrder.getStatus()).willReturn(OrderStatus.PENDING);

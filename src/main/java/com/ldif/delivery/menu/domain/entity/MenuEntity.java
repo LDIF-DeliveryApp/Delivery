@@ -3,7 +3,6 @@ package com.ldif.delivery.menu.domain.entity;
 import com.ldif.delivery.global.infrastructure.entity.BaseEntity;
 import com.ldif.delivery.menu.presentation.dto.MenuRequest;
 import com.ldif.delivery.store.domain.entity.StoreEntity;
-import com.ldif.delivery.store.domain.entity.StoreEntity;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;

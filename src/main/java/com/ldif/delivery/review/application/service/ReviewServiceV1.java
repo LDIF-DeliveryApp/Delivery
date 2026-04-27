@@ -44,11 +44,9 @@ public class ReviewServiceV1 {
         OrderEntity order = orderRepository.findActiveById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않거나 삭제된 주문입니다."));
 
-        UserEntity user = userRepository.findByUsername(order.getCustomerId())
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        UserEntity user = order.getCustomer();
 
-        StoreEntity store = storeRepository.findById(order.getStoreId())
-                .orElseThrow(() -> new IllegalArgumentException("가게를 찾을 수 없습니다."));
+        StoreEntity store = order.getStore();
 
         validateReviewAuthor(user.getUsername(), loginUser);
 
