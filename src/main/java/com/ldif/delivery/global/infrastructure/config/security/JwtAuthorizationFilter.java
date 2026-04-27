@@ -6,8 +6,10 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.graphql.GraphQlProperties;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -44,7 +46,31 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             Claims info = jwtTokenProvider.getUserInfoFromToken(tokenValue);
 
             try{
+                // 1. JWT에서 role 추출
+                String tokenRole = (String) info.get("role");
+
+                // 2. DB에서 role 조회
+                UserDetails userDetails = userDetailsService.loadUserByUsername(info.getSubject());
+                String dbRole = userDetails.getAuthorities().stream()
+                        .findFirst()
+                        .map(GrantedAuthority::getAuthority)
+                        .orElseThrow(() -> new RuntimeException("권한 정보가 없습니다."));
+
+                // 3. 불일치 시 차단 대신 재로그인 유도
+                if (!tokenRole.equals(dbRole)) {
+                    log.warn("권한 불일치 - JWT: {}, DB: {}", tokenRole, dbRole, info.getSubject());
+                    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    res.setContentType("application/json");
+                    res.setCharacterEncoding("UTF-8");
+                    res.getWriter().write(
+                            "{\"status\": 401, " +
+                                    "\"message\": \"권한이 변경되었습니다. 다시 로그인해주세요.\"}"
+                    );
+                    return;
+                }
+
                 setAuthentiaction(info.getSubject());
+
             }catch (Exception e){
                 log.error(e.getMessage());
                 return;
