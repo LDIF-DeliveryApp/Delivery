@@ -30,29 +30,11 @@ class PaymentServiceV1Test {
     @Mock
     private PaymentRepository paymentRepository;
 
-    @Mock
-    private UserRepository userRepository;
-
     @InjectMocks
     private PaymentServiceV1 paymentService;
 
     private UserDetailsImpl mockLoginUser() {
-        UserDetailsImpl loginUser = mock(UserDetailsImpl.class);
-
-        given(loginUser.getUsername()).willReturn("testUser");
-
-        List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority(UserRoleEnum.Authority.MASTER)
-        );
-
-        doReturn(authorities).when(loginUser).getAuthorities();
-
-        UserEntity user = mock(UserEntity.class);
-        given(user.getRole()).willReturn(UserRoleEnum.MASTER);
-        given(userRepository.findByUsername("testUser"))
-                .willReturn(Optional.of(user));
-
-        return loginUser;
+        return mock(UserDetailsImpl.class);
     }
 
     @Test
