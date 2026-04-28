@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.UUID;
 
 @Entity
@@ -47,6 +48,9 @@ public class StoreEntity extends BaseEntity {
     @Column(name = "average_rating", precision = 2, scale = 1)
     private BigDecimal averageRating = BigDecimal.valueOf(0.0);
 
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private Integer reviewCount = 0;
+
     @Column(name = "is_hidden")
     private boolean isHidden = false;
 
@@ -80,6 +84,21 @@ public class StoreEntity extends BaseEntity {
             throw new IllegalArgumentException("평점은 0.0 이상 5.0 이하여야 합니다.");
         }
         this.averageRating = newRating;
+    }
+
+    public void addReview(Integer newRating) {
+        // 1. 현재 총점 계산 = 기존 평균 * 기존 개수
+        BigDecimal currentTotalScore = this.averageRating.multiply(new BigDecimal(this.reviewCount));
+
+        // 2. 새로운 총점 = 기존 총점 + 이번 평점
+        BigDecimal newTotalScore = currentTotalScore.add(new BigDecimal(newRating));
+
+        // 3. 새로운 리뷰 개수
+        this.reviewCount++;
+
+        // 4. 새로운 평균 = 새로운 총점 / 새로운 개수 (소수점 첫째 자리까지 반올림)
+        // 2.15 -> 2.2 / 2.14 -> 2.1
+        this.averageRating = newTotalScore.divide(new BigDecimal(this.reviewCount), 1, RoundingMode.HALF_UP);
     }
 
     public void hide() {
