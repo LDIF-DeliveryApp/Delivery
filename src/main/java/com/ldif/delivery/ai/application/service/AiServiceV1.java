@@ -26,26 +26,15 @@ import java.util.EnumSet;
 public class AiServiceV1 {
 
     private final AiRequestLogRepository aiRequestLogRepository;
-    private final UserRepository userRepository;
     private final GeminiClient geminiClient;
 
     @Transactional
     public AiResponse setDescription(AiRequest aiRequest, @AuthenticationPrincipal UserDetailsImpl loginUser) {
-
-        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.OWNER));
 
         GeminiResponseDto result = geminiClient.call(aiRequest.getPrompt());
         AiRequestLogEntity aiRequestLogEntity = new AiRequestLogEntity(aiRequest, loginUser);
         aiRequestLogEntity.setAiResponse(result);
         aiRequestLogRepository.save(aiRequestLogEntity);
         return new AiResponse(aiRequestLogEntity);
-    }
-
-    private void validateUsrAuthority(UserDetailsImpl loginUser, EnumSet<UserRoleEnum> requireAuthorities) {
-        UserEntity user = userRepository.findById(loginUser.getUsername()).orElseThrow(() -> new IllegalArgumentException("해당 사용자 없음"));
-
-        if (!requireAuthorities.contains(user.getRole())) {
-            throw new AccessDeniedException("권한 없음");
-        }
     }
 }

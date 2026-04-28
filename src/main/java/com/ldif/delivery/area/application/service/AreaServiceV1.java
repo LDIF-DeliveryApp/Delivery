@@ -30,13 +30,10 @@ import java.util.UUID;
 public class AreaServiceV1 {
 
     private final AreaRepository areaRepository;
-    private final UserRepository userRepository;
 
     //지역 생성
     @Transactional
     public AreaResponse setArea(AreaRequest request, UserDetailsImpl loginUser) {
-
-        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.MANAGER, UserRoleEnum.MASTER));
 
         AreaEntity areaEntity = new AreaEntity(request);
         areaRepository.save(areaEntity);
@@ -65,8 +62,6 @@ public class AreaServiceV1 {
     //지역 수정
     public AreaResponse updateArea(UUID areaId, AreaRequest request, UserDetailsImpl loginUser) {
 
-        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.MANAGER, UserRoleEnum.MASTER));
-
         AreaEntity areaEntity = findAreaById(areaId);
         areaEntity.update(request);
         return new AreaResponse(areaEntity);
@@ -75,16 +70,12 @@ public class AreaServiceV1 {
     //지역 삭제
     public void deleteArea(UUID areaId, UserDetailsImpl loginUser) {
 
-        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.MASTER));
-
         AreaEntity areaEntity = findAreaById(areaId);
         areaEntity.delete(loginUser);
     }
 
     // 지역 활성화/비활성화
     public AreaResponse toggleActive(UUID areaId, UserDetailsImpl loginUser) {
-
-        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.MANAGER, UserRoleEnum.MASTER));
 
         AreaEntity areaEntity = findAreaById(areaId);
         areaEntity.toggleActive();
@@ -98,14 +89,5 @@ public class AreaServiceV1 {
             throw new IllegalArgumentException("지역 없음." + id);
         }
         return areaEntity;
-    }
-
-
-    private void validateUsrAuthority(UserDetailsImpl loginUser, EnumSet<UserRoleEnum> requireAuthorities) {
-        UserEntity user = userRepository.findById(loginUser.getUsername()).orElseThrow(() -> new IllegalArgumentException("해당 사용자 없음"));
-
-        if (!requireAuthorities.contains(user.getRole())) {
-            throw new AccessDeniedException("권한 없음");
-        }
     }
 }
