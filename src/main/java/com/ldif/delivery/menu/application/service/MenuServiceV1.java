@@ -30,7 +30,6 @@ import java.util.UUID;
 public class MenuServiceV1 {
 
     private final MenuRepository menuRepository;
-    private final UserRepository userRepository;
     private final AiServiceV1 aiServiceV1;
 
     //메뉴 상세 조회
@@ -47,7 +46,6 @@ public class MenuServiceV1 {
         if (!loginUser.hasPermission(menuEntity.getStoreEntity().getOwner().getUsername())) {
             throw new AccessDeniedException("접근 권한이 없습니다.");
         }
-        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.OWNER, UserRoleEnum.MANAGER, UserRoleEnum.MASTER));
 
         menuEntity.update(request);
         return new MenuResponse(menuEntity);
@@ -61,8 +59,6 @@ public class MenuServiceV1 {
         if (!loginUser.hasPermission(menuEntity.getStoreEntity().getOwner().getUsername())) {
             throw new AccessDeniedException("접근 권한이 없습니다.");
         }
-        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.OWNER, UserRoleEnum.MASTER));
-
 
         menuEntity.delete(loginUser.getUsername());
     }
@@ -75,7 +71,6 @@ public class MenuServiceV1 {
         if (!loginUser.hasPermission(menuEntity.getStoreEntity().getOwner().getUsername())) {
             throw new AccessDeniedException("접근 권한이 없습니다.");
         }
-        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.OWNER, UserRoleEnum.MANAGER, UserRoleEnum.MASTER));
 
         menuEntity.hide();
         return new MenuResponse(menuEntity);
@@ -89,7 +84,6 @@ public class MenuServiceV1 {
         if (!loginUser.hasPermission(menuEntity.getStoreEntity().getOwner().getUsername())) {
             throw new AccessDeniedException("접근 권한이 없습니다.");
         }
-        validateUsrAuthority(loginUser, EnumSet.of(UserRoleEnum.OWNER));
 
         if (Boolean.TRUE.equals(request.getAiDescription())) {
             AiRequest aiRequest = new AiRequest();
@@ -118,14 +112,6 @@ public class MenuServiceV1 {
             throw new IllegalArgumentException("메뉴 없음." + id);
         }
         return menuEntity;
-    }
-
-    private void validateUsrAuthority(UserDetailsImpl loginUser, EnumSet<UserRoleEnum> requireAuthorities) {
-        UserEntity user = userRepository.findById(loginUser.getUsername()).orElseThrow(() -> new IllegalArgumentException("해당 사용자 없음"));
-
-        if (!requireAuthorities.contains(user.getRole())) {
-            throw new AccessDeniedException("권한 없음");
-        }
     }
 
 }

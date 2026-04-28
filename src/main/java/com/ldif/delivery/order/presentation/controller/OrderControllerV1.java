@@ -6,6 +6,7 @@ import com.ldif.delivery.order.application.service.OrderServiceV1;
 import com.ldif.delivery.order.domain.entity.OrderStatus;
 import com.ldif.delivery.order.presentation.dto.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
+@Validated
 public class OrderControllerV1 {
 
     private final OrderServiceV1 orderService;
@@ -55,8 +58,8 @@ public class OrderControllerV1 {
     public ResponseEntity<CommonResponse<PageResponseDto<OrderResponse>>> getOrders(
             @RequestParam(required = false) UUID storeId,
             @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size,
             @RequestParam(defaultValue = "createdAt,DESC") String sort,
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -111,7 +114,7 @@ public class OrderControllerV1 {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'MASTER')")
     public ResponseEntity<CommonResponse<OrderResponse>> updateOrder(
             @PathVariable UUID orderId,
-            @RequestBody OrderUpdateRequest req,
+            @Valid @RequestBody OrderUpdateRequest req,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         String role = extractRole(userDetails);

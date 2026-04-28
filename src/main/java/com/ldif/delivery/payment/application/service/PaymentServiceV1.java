@@ -2,14 +2,20 @@ package com.ldif.delivery.payment.application.service;
 
 import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import com.ldif.delivery.payment.domain.entity.PaymentEntity;
+import com.ldif.delivery.payment.domain.entity.PaymentStatus;
 import com.ldif.delivery.payment.domain.repository.PaymentRepository;
 import com.ldif.delivery.payment.presentation.dto.PaymentResponse;
 import com.ldif.delivery.payment.presentation.dto.PaymentStatusResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,16 +25,30 @@ public class PaymentServiceV1 {
 
     private final PaymentRepository paymentRepository;
 
-    // 결제 목록 조회
     @Transactional(readOnly = true)
-    public List<PaymentResponse> getPayments() {
-        return paymentRepository.findAll().stream()
-                .filter(payment -> payment.getDeletedAt() == null)
-                .map(PaymentResponse::new)
-                .toList();
+    public Page<PaymentResponse> getPayments(String status, int page, int size, String sort, UserDetailsImpl loginUser) {
+
+        Sort.Direction direction = sort.equalsIgnoreCase("ASC")
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        List<Integer> allowedSize = Arrays.asList(10, 30, 50);
+        int setSize = allowedSize.contains(size) ? size : 10;
+
+        Pageable pageable = PageRequest.of(page, setSize, Sort.by(direction, "createdAt"));
+
+        Page<PaymentEntity> payments;
+
+        if (status == null || status.isBlank()) {
+            payments = paymentRepository.findAllByDeletedAtIsNull(pageable);
+        } else {
+            PaymentStatus paymentStatus = PaymentStatus.valueOf(status.toUpperCase());
+            payments = paymentRepository.findByStatusAndDeletedAtIsNull(paymentStatus, pageable);
+        }
+
+        return payments.map(PaymentResponse::new);
     }
 
-    // 결제 상세 조회
     @Transactional(readOnly = true)
     public PaymentResponse getPayment(UUID paymentId, UserDetailsImpl loginUser) {
         PaymentEntity payment = paymentRepository.findById(paymentId)
@@ -41,7 +61,6 @@ public class PaymentServiceV1 {
         return new PaymentResponse(payment);
     }
 
-    // 결제 상태 조회
     @Transactional(readOnly = true)
     public PaymentStatusResponse getPaymentStatus(UUID paymentId, UserDetailsImpl loginUser) {
         PaymentEntity payment = paymentRepository.findById(paymentId)
@@ -54,7 +73,6 @@ public class PaymentServiceV1 {
         return new PaymentStatusResponse(payment);
     }
 
-    // 결제 취소
     @Transactional
     public void cancelPayment(UUID paymentId, UserDetailsImpl loginUser) {
         PaymentEntity payment = paymentRepository.findById(paymentId)
@@ -64,11 +82,11 @@ public class PaymentServiceV1 {
             throw new IllegalStateException("삭제된 결제입니다.");
         }
 
-        if ("CANCELLED".equals(payment.getStatus())) {
+        if (payment.isCancelled()) {
             throw new IllegalStateException("이미 취소된 결제입니다.");
         }
 
-        if ("COMPLETED".equals(payment.getStatus())
+        if (payment.isCompleted()
                 && payment.getCreatedAt().plusMinutes(5).isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("결제 후 5분이 지나 취소할 수 없습니다.");
         }

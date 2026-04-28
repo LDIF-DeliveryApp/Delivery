@@ -2,10 +2,7 @@ package com.ldif.delivery.order.presentation.dto;
 
 import com.ldif.delivery.order.domain.entity.OrderType;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,6 +29,7 @@ public record OrderCreateRequest(
 
             @NotNull(message = "주문 수량은 필수입니다.")
             @Min(value = 1, message = "주문 수량은 1개 이상이어야 합니다.")
+            @Max(value = 100, message = "수량은 100개 이하여야 합니다.")
             Integer quantity
     ){}
 }

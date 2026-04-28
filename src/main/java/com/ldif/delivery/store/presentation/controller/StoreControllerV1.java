@@ -12,6 +12,7 @@ import com.ldif.delivery.user.domain.entity.UserRoleEnum;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -36,7 +37,7 @@ public class StoreControllerV1 {
             UserRoleEnum.Authority.MASTER
     })
     public ResponseEntity<CommonResponse<UUID>> createStore(
-            @RequestBody StoreRequest request,
+            @Valid @RequestBody StoreRequest request,
             @AuthenticationPrincipal UserDetailsImpl loginUser
     ) {
         UUID storeId = storeServiceV1.createStore(request, loginUser);
@@ -53,11 +54,17 @@ public class StoreControllerV1 {
             UserRoleEnum.Authority.MANAGER,
             UserRoleEnum.Authority.MASTER
     })
-    public ResponseEntity<CommonResponse<List<StoreResponse>>> getStores() {
-        List<StoreResponse> stores = storeServiceV1.getStores();
+    public ResponseEntity<CommonResponse<PageResponseDto<StoreResponse>>> getStores(
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "sort", defaultValue = "DESC") String sort
+    ) {
+        Page<StoreResponse> storePage = storeServiceV1.getStores(keyword, page, size, sort);
+        PageResponseDto<StoreResponse> data = new PageResponseDto<>(storePage);
 
         return ResponseEntity.status(HttpStatus.OK)
-                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", stores));
+                .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", data));
     }
 
     // 가게 상세 조회
@@ -84,7 +91,7 @@ public class StoreControllerV1 {
     })
     public ResponseEntity<CommonResponse<Void>> updateStore(
             @PathVariable UUID storeId,
-            @RequestBody StoreRequest request,
+            @Valid @RequestBody StoreRequest request,
             @AuthenticationPrincipal UserDetailsImpl loginUser
     ) {
         storeServiceV1.updateStore(storeId, request, loginUser);

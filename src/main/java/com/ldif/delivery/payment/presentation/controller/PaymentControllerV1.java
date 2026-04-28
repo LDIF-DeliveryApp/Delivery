@@ -7,13 +7,13 @@ import com.ldif.delivery.payment.presentation.dto.PaymentResponse;
 import com.ldif.delivery.payment.presentation.dto.PaymentStatusResponse;
 import com.ldif.delivery.user.domain.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -29,8 +29,14 @@ public class PaymentControllerV1 {
             UserRoleEnum.Authority.MASTER,
             UserRoleEnum.Authority.MANAGER
     })
-    public ResponseEntity<CommonResponse<List<PaymentResponse>>> getPayments() {
-        List<PaymentResponse> payments = paymentServiceV1.getPayments();
+    public ResponseEntity<CommonResponse<Page<PaymentResponse>>> getPayments(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "DESC") String sort,
+            @AuthenticationPrincipal UserDetailsImpl loginUser
+    ) {
+        Page<PaymentResponse> payments = paymentServiceV1.getPayments(status, page, size, sort, loginUser);
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", payments));

@@ -1,5 +1,7 @@
 package com.ldif.delivery.order.application.service;
 
+import com.ldif.delivery.address.entity.Address;
+import com.ldif.delivery.address.repository.AddressRepository;
 import com.ldif.delivery.global.infrastructure.presentation.dto.PageResponseDto;
 import com.ldif.delivery.menu.domain.entity.MenuEntity;
 import com.ldif.delivery.menu.domain.repository.MenuRepository;
@@ -8,6 +10,8 @@ import com.ldif.delivery.order.domain.entity.OrderItemEntity;
 import com.ldif.delivery.order.domain.entity.OrderStatus;
 import com.ldif.delivery.order.domain.entity.OrderType;
 import com.ldif.delivery.order.domain.repository.OrderRepository;
+import com.ldif.delivery.order.exception.OrderBusinessException;
+import com.ldif.delivery.order.exception.OrderNotFoundException;
 import com.ldif.delivery.order.presentation.dto.*;
 import com.ldif.delivery.store.domain.entity.StoreEntity;
 import com.ldif.delivery.store.domain.repository.StoreRepository;
@@ -35,6 +39,7 @@ public class OrderServiceV1 {
     private final UserRepository userRepository;
     private final StoreRepository storeRepository;
     private final MenuRepository menuRepository;
+    private final AddressRepository addressRepository;
 
     private static final int CANCEL_LIMIT_MINUTES = 5;
 
@@ -55,16 +60,16 @@ public class OrderServiceV1 {
                         "존재하지 않는 가게입니다. storeId=" + req.storeId()));
 
         if (store.isHidden()) {
-            throw new IllegalArgumentException("현재 운영 중이지 않은 가게입니다.");
+            throw new OrderBusinessException("현재 운영 중이지 않은 가게입니다.");
         }
 
         // 3. 배송지 조회 ( 선택값, null허용)
-//        AddressEntity address = null;
-//        if (req.addressId() != null) {
-//            address = addressRepository.findById(req.addressId())
-//                    .orElseThrow(() -> new IllegalArgumentException(
-//                            "존재하지 않는 배송지입니다. addressId=" + req.addressId()));
-//        }
+        Address address = null;
+        if (req.addressId() != null) {
+            address = addressRepository.findById(req.addressId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "존재하지 않는 배송지입니다. addressId=" + req.addressId()));
+        }
 
         // 4. 메뉴 일괄 조회
         Set<UUID> menuIds = req.items().stream()
@@ -86,7 +91,7 @@ public class OrderServiceV1 {
 
         // 6. 메뉴가 해당 가게 소속인지 검증
         menus.forEach(menu -> {
-            if (!menu.getStoreId().equals(req.storeId())) {
+            if (!menu.getStoreEntity().getStoreId().equals(req.storeId())) {
                 throw new IllegalArgumentException(
                         "해당 가게의 메뉴가 아닙니다. menuId=" + menu.getMenuId());
             }
@@ -102,7 +107,7 @@ public class OrderServiceV1 {
 
             // 7-2. 숨김 여부
             if (Boolean.TRUE.equals(menu.getIsHidden())) {
-                throw new IllegalArgumentException(
+                throw new OrderBusinessException(
                         "현재 주문할 수 없는 메뉴입니다. menuId=" + menu.getMenuId());
             }
         });
@@ -131,7 +136,7 @@ public class OrderServiceV1 {
         OrderEntity order = OrderEntity.create(
                 customer,
                 store,
-                req.addressId(),    // address로 변경 예정
+                address,
                 OrderType.valueOf(req.orderType()),
                 req.request(),
                 items,
@@ -238,7 +243,7 @@ public class OrderServiceV1 {
         // 5분 이내 취소 가능 여부 확인
         if (LocalDateTime.now().isAfter(
                 order.getCreatedAt().plusMinutes(CANCEL_LIMIT_MINUTES))) {
-            throw  new IllegalStateException("주문 생성 후 5분이 경과하여 취소할 수 없습니다.");
+            throw  new OrderBusinessException("주문 생성 후 5분이 경과하여 취소할 수 없습니다.");
         }
 
         order.changeStatus(OrderStatus.CANCELED);
@@ -259,7 +264,7 @@ public class OrderServiceV1 {
     // 주문 존재 여부 확인
     private OrderEntity findActiveOrder(UUID orderId) {
         return orderRepository.findActiveById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않거나 삭제된 주문입니다."));
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
     }
 
     // 주문 접근 가능자 확인
@@ -274,10 +279,9 @@ public class OrderServiceV1 {
         StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 가게입니다."));
 
-        //StoreEntity에 OwnerId 생기면 활성화할 예정
-//        if (!store.getOwnerId.equals(ownerId)) {
-//            throw new SecurityException("해당 가게의 주문에 접근할 권한이 없습니다.");
-//        }
+        if (!store.getOwner().getUsername().equals(ownerId)) {
+            throw new SecurityException("해당 가게의 주문에 접근할 권한이 없습니다.");
+        }
     }
 
     // 권한 확인

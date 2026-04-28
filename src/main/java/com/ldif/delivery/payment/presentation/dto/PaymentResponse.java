@@ -1,6 +1,8 @@
 package com.ldif.delivery.payment.presentation.dto;
 
 import com.ldif.delivery.payment.domain.entity.PaymentEntity;
+import com.ldif.delivery.payment.domain.entity.PaymentMethod;
+import com.ldif.delivery.payment.domain.entity.PaymentStatus;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -11,8 +13,8 @@ public class PaymentResponse {
 
     private final UUID paymentId;
     private final UUID orderId;
-    private final String paymentMethod;
-    private final String status;
+    private final PaymentMethod paymentMethod;
+    private final PaymentStatus status;
     private final Integer amount;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;

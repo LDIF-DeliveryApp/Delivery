@@ -76,11 +76,25 @@ public class StoreServiceV1 {
 
     // 가게 목록 조회
     @Transactional(readOnly = true)
-    public List<StoreResponse> getStores() {
-        return storeRepository.findAll().stream()
-                .filter(store -> !store.isDeleted())
-                .map(StoreResponse::new)
-                .toList();
+    public Page<StoreResponse> getStores(String keyword, int page, int size, String sort) {
+
+        // size 제한
+        List<Integer> allowedSize = Arrays.asList(10, 30, 50);
+        int setSize = allowedSize.contains(size) ? size : 10;
+
+        // 정렬 방향
+        Sort.Direction direction = sort.equalsIgnoreCase("ASC")
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        Pageable pageable = PageRequest.of(page, setSize, Sort.by(direction, "createdAt"));
+
+        // repository 호출
+        Page<StoreEntity> storePage =
+                storeRepository.findByNameContainingAndDeletedAtIsNull(keyword, pageable);
+
+        // entity → dto 변환
+        return storePage.map(StoreResponse::new);
     }
 
     // 가게 수정

@@ -1,6 +1,8 @@
 package com.ldif.delivery.order.domain.entity;
 
+import com.ldif.delivery.address.entity.Address;
 import com.ldif.delivery.global.infrastructure.entity.BaseEntity;
+import com.ldif.delivery.order.exception.OrderBusinessException;
 import com.ldif.delivery.store.domain.entity.StoreEntity;
 import com.ldif.delivery.user.domain.entity.UserEntity;
 import jakarta.persistence.*;
@@ -37,11 +39,9 @@ public class OrderEntity extends BaseEntity {
     private StoreEntity store;
 
     // FK → p_address.address_id
-    // ID → Entity 참조로 전환 예정 (AddressEntity 아직 없음)
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "address_id")
-    @Column(name = "address_id")
-    private UUID addressId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "address_id")
+    private Address address;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "order_type", nullable = false, length = 20)
@@ -65,15 +65,15 @@ public class OrderEntity extends BaseEntity {
     // 비즈니스 메서드
     // ───────────────────────────────────────────────────────────
 
-    public static OrderEntity create(   // UUID addressId → AddressEntity address
-            UserEntity customer, StoreEntity store, UUID addressId,
+    public static OrderEntity create(
+            UserEntity customer, StoreEntity store, Address address,
             OrderType orderType, String request,
             List<OrderItemEntity> items, Integer totalPrice
     ) {
         OrderEntity order = OrderEntity.builder()
                 .customer(customer)
                 .store(store)
-                .addressId(addressId)
+                .address(address)
                 .orderType(orderType)
                 .status(OrderStatus.PENDING)
                 .request(request)
@@ -86,18 +86,19 @@ public class OrderEntity extends BaseEntity {
 
     public void updateRequest(String request) {
         if (this.status != OrderStatus.PENDING) {
-            throw new IllegalStateException("PENDING(접수 대기) 상태일 때만 수정 가능합니다.");
+            throw new OrderBusinessException("PENDING(접수 대기) 상태일 때만 수정 가능합니다.");
         }
         this.request = request;
     }
 
     public void updateRequestByMaster(String request) {
+
         this.request = request;
     }
 
     public void changeStatus(OrderStatus nextStatus) {
         if (!this.status.canTransitionTo(nextStatus)) {
-            throw new IllegalStateException( "'" + this.status + "' 상태에서 '" + nextStatus + "'로 변경할 수 없습니다.");
+            throw new OrderBusinessException( "'" + this.status + "' 상태에서 '" + nextStatus + "'로 변경할 수 없습니다.");
         }
         this.status = nextStatus;
     }
