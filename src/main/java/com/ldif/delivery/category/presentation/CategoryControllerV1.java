@@ -3,14 +3,15 @@ package com.ldif.delivery.category.presentation;
 import com.ldif.delivery.category.application.service.CategoryServiceV1;
 import com.ldif.delivery.category.presentation.dto.CategoryRequest;
 import com.ldif.delivery.category.presentation.dto.CategoryResponse;
+import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import com.ldif.delivery.global.infrastructure.presentation.dto.CommonResponse;
 import com.ldif.delivery.user.domain.entity.UserRoleEnum;
-import jakarta.servlet.ServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -26,20 +27,23 @@ public class CategoryControllerV1 {
 
     @PostMapping
     @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER})
-    public ResponseEntity<CommonResponse<CategoryResponse>> createCategory(@Valid @RequestBody CategoryRequest request)
-    {
-        CategoryResponse createCategoryResponse = categoryServiceV1.createCategory(request);
+    public ResponseEntity<CommonResponse<CategoryResponse>> createCategory(
+            @AuthenticationPrincipal UserDetailsImpl loginUser,
+            @Valid @RequestBody CategoryRequest request
+    ) {
+        CategoryResponse response = categoryServiceV1.createCategory(request, loginUser);
+
         return ResponseEntity
-                .created(URI.create("/api/categories" + createCategoryResponse.getCategoryId()))
+                .created(URI.create("/api/categories/" + response.getCategoryId()))
                 .body(CommonResponse.success(
                         HttpStatus.CREATED.value(),
                         "SUCCESS",
-                        createCategoryResponse
+                        response
                 ));
     }
 
     @GetMapping
-    public ResponseEntity<CommonResponse<List<CategoryResponse>>> getProducts(){
+    public ResponseEntity<CommonResponse<List<CategoryResponse>>> getCategories(){
         List<CategoryResponse> categories = categoryServiceV1.getCategories();
 
         return ResponseEntity.ok(CommonResponse.success(
@@ -50,7 +54,7 @@ public class CategoryControllerV1 {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CommonResponse<CategoryResponse>> getProduct(@PathVariable UUID id)
+    public ResponseEntity<CommonResponse<CategoryResponse>> getCategory(@PathVariable UUID id)
     {
         CategoryResponse category = categoryServiceV1.getCategory(id);
 
@@ -65,23 +69,29 @@ public class CategoryControllerV1 {
 
     @PutMapping("/{id}")
     @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER})
-    public ResponseEntity<CommonResponse<CategoryResponse>> updateProduct(@PathVariable UUID id, @Valid @RequestBody CategoryRequest request)
-    {
-        CategoryResponse updatedCategory = categoryServiceV1.updateCategory(id, request);
+    public ResponseEntity<CommonResponse<CategoryResponse>> updateCategory(
+            @AuthenticationPrincipal UserDetailsImpl loginUser,
+            @PathVariable UUID id,
+            @Valid @RequestBody CategoryRequest request
+    ) {
+        CategoryResponse response = categoryServiceV1.updateCategory(id, request, loginUser);
 
         return ResponseEntity.ok(
                 CommonResponse.success(
                         HttpStatus.OK.value(),
                         "SUCCESS",
-                        updatedCategory
+                        response
                 )
         );
     }
 
     @DeleteMapping("/{id}")
     @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER})
-    public ResponseEntity<CommonResponse<Void>> deleteProduct(@PathVariable UUID id){
-        categoryServiceV1.deleteCategory(id);
+    public ResponseEntity<CommonResponse<Void>> deleteCategory(
+            @AuthenticationPrincipal UserDetailsImpl loginUser,
+            @PathVariable UUID id
+    ) {
+        categoryServiceV1.deleteCategory(id, loginUser);
 
         return ResponseEntity.ok(
                 CommonResponse.success(
