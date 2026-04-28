@@ -10,17 +10,17 @@ import java.util.UUID;
 @NoArgsConstructor
 public class StoreRequest {
 
-    @NotBlank
+    @NotBlank(message = "가게 이름은 필수입니다.")
     private String name;
 
-    @NotBlank
+    @NotBlank(message = "가게 주소는 필수입니다.")
     private String address;
 
     private String phone;
 
-    @NotNull
+    @NotNull(message = "카테고리 ID는 필수입니다.")
     private UUID categoryId;
 
-    @NotNull
+    @NotNull(message = "지역 ID는 필수입니다.")
     private UUID areaId;
 }
