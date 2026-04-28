@@ -82,10 +82,35 @@ clean { delete file(querydslDir) }
 tasks.named('test') {
     useJUnitPlatform()
 
-    // 이 설정이 있어야 빌드(Gradle)가 내 컴퓨터의 환경 변수를 읽어갑니다.
-    environment "POSTGRES_USER", System.getenv("POSTGRES_USER")
-    environment "POSTGRES_PASSWORD", System.getenv("POSTGRES_PASSWORD")
-    environment "JWT_SECRET_KEY", System.getenv("JWT_SECRET_KEY")
+    def envMap = [:]
+
+    // 1. .env 파일 로드 (가장 낮은 우선순위)
+    if (file(".env").exists()) {
+        file(".env").readLines().each { line ->
+            def trimmed = line.trim()
+            if (trimmed && !trimmed.startsWith("#") && trimmed.contains("=")) {
+                def parts = trimmed.split("=", 2)
+                def key = parts[0].trim()
+                def value = parts.length > 1 ? parts[1].trim().replaceAll(/^["']|["']$/, "") : ""
+                envMap[key] = value
+            }
+        }
+    }
+
+    // 2. 필요한 특정 시스템 환경 변수들을 추가/덮어쓰기 (가장 높은 우선순위)
+    // .env에 없더라도 시스템에 정의되어 있다면 가져옵니다.
+    def criticalKeys = ["POSTGRES_USER", "POSTGRES_PASSWORD", "JWT_SECRET_KEY", "GEMINI_API_KEY"]
+    criticalKeys.each { key ->
+        def sysVal = System.getenv(key)
+        if (sysVal != null) {
+            envMap[key] = sysVal
+        }
+    }
+
+    // 3. 일괄 적용
+    envMap.each { k, v ->
+        environment k, v
+    }
 }
 
 tasks.register('dev', JavaExec) {
