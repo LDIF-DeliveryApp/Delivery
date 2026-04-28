@@ -29,11 +29,11 @@ INSERT INTO p_area (area_id, name, city, district, is_active, is_deleted, create
 VALUES ('550e8400-e29b-41d4-a716-446655440a01', '역삼동', '서울', '강남구', true, false, NOW(), 'system');
 
 -- 6. 상점 (p_store)
-INSERT INTO p_store (store_id, name, address, phone, average_rating, is_hidden, owner_id, category_id, area_id, created_at, created_by)
-VALUES ('550e8400-e29b-41d4-a716-446655440010', '똔똔치킨 강남점', '서울 강남구 역삼동 123-4', '02-123-4567', 4.5, false, 'owner01', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'owner01');
+INSERT INTO p_store (store_id, name, address, phone, average_rating, review_count, is_hidden, owner_id, category_id, area_id, created_at, created_by)
+VALUES ('550e8400-e29b-41d4-a716-446655440010', '똔똔치킨 강남점', '서울 강남구 역삼동 123-4', '02-123-4567', 4.5, 2, false, 'owner01', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'owner01');
 
-INSERT INTO p_store (store_id, name, address, phone, average_rating, is_hidden, owner_id, category_id, area_id, created_at, created_by)
-VALUES ('550e8400-e29b-41d4-a716-446655440020', '도리도리피자', '서울 강남구 역삼동 567-8', '02-987-6543', 5.0, false, 'owner02', '550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'owner02');
+INSERT INTO p_store (store_id, name, address, phone, average_rating, review_count, is_hidden, owner_id, category_id, area_id, created_at, created_by)
+VALUES ('550e8400-e29b-41d4-a716-446655440020', '도리도리피자', '서울 강남구 역삼동 567-8', '02-987-6543', 5.0, 1, false, 'owner02', '550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'owner02');
 
 -- 7. 주문 (p_order)
 -- 기존 주문 3개 (리뷰 있음)
