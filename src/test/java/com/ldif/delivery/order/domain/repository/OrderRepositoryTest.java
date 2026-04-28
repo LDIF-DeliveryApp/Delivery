@@ -16,12 +16,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -32,6 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @Import(QueryDslConfig.class)
+@TestPropertySource(properties = {
+        "spring.sql.init.mode=never",                   // data.sql 실행 안 함
+        "spring.jpa.hibernate.ddl-auto=create-drop"     // Hibernate DDL로만 테이블 생성
+})
 public class OrderRepositoryTest {
 
     @Autowired
@@ -90,8 +96,11 @@ public class OrderRepositoryTest {
         menu1 = em.persist(new MenuEntity(menuRequest, store1));
 
         // Address
-        address = em.persist(Address.builder()
-                .user(customer1).address("서울시 종로구 지하문로3가길 33")).build();
+        Address address = Address.builder()
+                .user(customer1)
+                .address("서울시 종로구 지하문로3가길 33")
+                .detailAddress("101호")
+                .build();
 
         em.flush();
         em.clear();
