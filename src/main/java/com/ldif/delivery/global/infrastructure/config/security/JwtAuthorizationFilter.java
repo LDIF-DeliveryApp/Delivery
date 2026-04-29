@@ -47,7 +47,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
             try{
                 // 1. JWT에서 role 추출
-                String tokenRole = (String) info.get("role");
+                String tokenRole = (String) info.get("auth");
 
                 // 2. DB에서 role 조회
                 UserDetails userDetails = userDetailsService.loadUserByUsername(info.getSubject());
