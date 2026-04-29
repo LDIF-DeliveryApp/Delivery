@@ -70,7 +70,7 @@ public class UserControllerV1 {
     @Secured({UserRoleEnum.Authority.MASTER, UserRoleEnum.Authority.MANAGER, UserRoleEnum.Authority.CUSTOMER})
     public ResponseEntity<CommonResponse<ResUserDto>> updateUserInfo (
             @PathVariable String username,
-            @RequestBody ReqUserDto requestDto,
+            @Valid @RequestBody ReqUserDto requestDto,
             @AuthenticationPrincipal UserDetailsImpl loginUser){
 
         if(!loginUser.hasPermission(username)){

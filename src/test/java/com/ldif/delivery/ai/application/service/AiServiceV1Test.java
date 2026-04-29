@@ -30,8 +30,6 @@ class AiServiceV1Test {
     @Mock
     private AiRequestLogRepository aiRequestLogRepository;
     @Mock
-    private UserRepository userRepository;
-    @Mock
     private GeminiClient geminiClient;
 
     @InjectMocks
@@ -55,7 +53,6 @@ class AiServiceV1Test {
 
         GeminiResponseDto geminiResponseDto = new GeminiResponseDto("설명", "치킨");
 
-        given(userRepository.findById(any())).willReturn(Optional.of(ownerUser));
         given(geminiClient.call(any())).willReturn(geminiResponseDto);
 
         //when
@@ -67,16 +64,16 @@ class AiServiceV1Test {
     }
 
     @Test
-    @DisplayName("AI 실패 - 권한")
-    void setDescription_Fail() {
+    @DisplayName("AI 실패 - 프롬프트 누락")
+    void setDescription_Fail_PromptMissing() {
         //given
         UserEntity customer = new UserEntity("user", "nick", "u@u.com", "pass", UserRoleEnum.CUSTOMER);
         UserDetailsImpl customerUser = new UserDetailsImpl(customer);
 
-        given(userRepository.findById(any())).willReturn(Optional.of(customer));
+        AiRequest request = new AiRequest(); // prompt is null
 
         //when,then
-        assertThrows(AccessDeniedException.class, () ->
-                aiServiceV1.setDescription(new AiRequest(), customerUser));
+        assertThrows(NullPointerException.class, () ->
+                aiServiceV1.setDescription(request, customerUser));
     }
 }

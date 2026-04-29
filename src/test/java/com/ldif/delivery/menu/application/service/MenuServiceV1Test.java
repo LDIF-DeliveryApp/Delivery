@@ -34,8 +34,6 @@ class MenuServiceV1Test {
 
     @Mock
     private MenuRepository menuRepository;
-    @Mock
-    private UserRepository userRepository;
 
     @InjectMocks
     private MenuServiceV1 menuServiceV1;
@@ -78,7 +76,6 @@ class MenuServiceV1Test {
 
         // mock 설정
         given(menuRepository.findById(menuId)).willReturn(Optional.of(menuEntity));
-        given(userRepository.findById("User")).willReturn(Optional.of(ownerUser));
 
         //when
         MenuRequest newMenuRequest = new MenuRequest();
@@ -124,9 +121,6 @@ class MenuServiceV1Test {
         ReflectionTestUtils.setField(newMenuRequest, "name", "qwer");
         ReflectionTestUtils.setField(newMenuRequest, "price", 1234);
         UserDetailsImpl loginUser = new UserDetailsImpl(ownerUser);
-
-        // mock 설정
-        given(userRepository.findById("User")).willReturn(Optional.of(ownerUser));
 
         // when
         MenuResponse response = menuServiceV1.setMenu(newMenuRequest, storeEntity, loginUser);

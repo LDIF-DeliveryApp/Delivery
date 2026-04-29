@@ -1,7 +1,9 @@
 package com.ldif.delivery.global.infrastructure.presentation.advice;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.ldif.delivery.global.exception.ErrorCode;
 import com.ldif.delivery.global.infrastructure.presentation.dto.CommonResponse;
+import com.ldif.delivery.review.exception.ReviewException;
 import com.ldif.delivery.order.exception.OrderBusinessException;
 import com.ldif.delivery.order.exception.OrderNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -75,6 +77,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(CommonResponse.error(HttpStatus.BAD_REQUEST.value(), errorMessage, 
                         List.of(new CommonResponse.FieldErrorDto(fieldName, "타입이 일치하지 않습니다."))));
+    }
+
+    /**
+     * ReviewException 처리 (리뷰 도메인 비즈니스 에러)
+     */
+    @ExceptionHandler(ReviewException.class)
+    public ResponseEntity<CommonResponse<?>> handleReviewException(ReviewException e) {
+        log.error("ReviewException 발생: {}", e.getMessage());
+        ErrorCode errorCode = e.getErrorCode();
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(CommonResponse.error(
+                        errorCode.getStatus().value(),
+                        errorCode.getMessage(),
+                        List.of(new CommonResponse.FieldErrorDto("review", e.getMessage()))
+                ));
     }
 
     /**

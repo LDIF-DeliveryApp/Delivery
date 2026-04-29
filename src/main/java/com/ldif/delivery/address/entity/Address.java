@@ -17,7 +17,7 @@ import java.util.UUID;
 public class Address extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "address_id", columnDefinition = "BINARY(16)")
+    @Column(name = "address_id")
     private UUID addressId;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -1,5 +1,8 @@
 package com.ldif.delivery;
 
+import com.ldif.delivery.area.domain.entity.AreaEntity;
+import com.ldif.delivery.category.domain.entity.CategoryEntity;
+import com.ldif.delivery.global.exception.ErrorCode;
 import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import com.ldif.delivery.order.domain.entity.OrderEntity;
 import com.ldif.delivery.order.domain.entity.OrderStatus;
@@ -7,6 +10,7 @@ import com.ldif.delivery.order.domain.repository.OrderRepository;
 import com.ldif.delivery.review.application.service.ReviewServiceV1;
 import com.ldif.delivery.review.domain.entity.ReviewEntity;
 import com.ldif.delivery.review.domain.respository.ReviewRepository;
+import com.ldif.delivery.review.exception.ReviewException;
 import com.ldif.delivery.review.presentation.dto.ReqReviewDto;
 import com.ldif.delivery.review.presentation.dto.ResReviewDetailDto;
 import com.ldif.delivery.review.presentation.dto.ResReviewDto;
@@ -35,8 +39,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -108,6 +112,7 @@ public class ReviewTest {
             ReqReviewDto dto = new ReqReviewDto(5, "맛있어요!");
 
             given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(mockOrder));
+            given(storeRepository.findByIdWithLock(any())).willReturn(Optional.of(mockStore));
             given(reviewRepository.findByOrder_OrderId(orderId)).willReturn(Optional.empty());
 
             // Mock 객체를 save 반환값으로 사용해야 DTO 변환 시 NPE 안 남
@@ -118,7 +123,12 @@ public class ReviewTest {
 
             // Then
             assertThat(result).isNotNull();
+            assertThat(result.getReviewId()).isEqualTo(reviewId);
+            assertThat(result.getRating()).isEqualTo(5);
+            assertThat(result.getContent()).isEqualTo("맛있어요!");
+            assertThat(result.getStoreName()).isEqualTo("가게이름");
             verify(reviewRepository, times(1)).save(any(ReviewEntity.class));
+            verify(mockStore, times(1)).addReview(dto.getRating());
         }
 
         @Test
@@ -129,10 +139,10 @@ public class ReviewTest {
             given(orderRepository.findActiveById(orderId)).willReturn(Optional.empty());
 
             // When & Then
-            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+            ReviewException e = assertThrows(ReviewException.class, () -> {
                 reviewService.createReview(orderId, dto, loginUser);
             });
-            assertThat(e.getMessage()).isEqualTo("존재하지 않거나 삭제된 주문입니다.");
+            assertThat(e.getErrorCode()).isEqualTo(ErrorCode.ORDER_NOT_FOUND);
         }
 
         @Test
@@ -141,6 +151,7 @@ public class ReviewTest {
             // Given
             ReqReviewDto dto = new ReqReviewDto(5, "맛있어요!");
             given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(mockOrder));
+            given(storeRepository.findByIdWithLock(any())).willReturn(Optional.of(mockStore));
 
             // 권한 없음 설정
             given(loginUser.hasPermission(username)).willReturn(false);
@@ -158,14 +169,15 @@ public class ReviewTest {
             // Given
             ReqReviewDto dto = new ReqReviewDto(5, "맛있어요!");
             given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(mockOrder));
+            given(storeRepository.findByIdWithLock(any())).willReturn(Optional.of(mockStore));
 
             given(reviewRepository.findByOrder_OrderId(orderId)).willReturn(Optional.of(mockReview));
 
             // When & Then
-            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+            ReviewException e = assertThrows(ReviewException.class, () -> {
                 reviewService.createReview(orderId, dto, loginUser);
             });
-            assertThat(e.getMessage()).isEqualTo("이미 등록된 리뷰가 있습니다.");
+            assertThat(e.getErrorCode()).isEqualTo(ErrorCode.REVIEW_ALREADY_EXISTS);
         }
 
         @Test
@@ -174,15 +186,70 @@ public class ReviewTest {
             // Given
             ReqReviewDto dto = new ReqReviewDto(5, "맛있어요!");
             given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(mockOrder));
+            given(storeRepository.findByIdWithLock(any())).willReturn(Optional.of(mockStore));
             given(reviewRepository.findByOrder_OrderId(orderId)).willReturn(Optional.empty());
 
             given(mockOrder.getStatus()).willReturn(OrderStatus.PENDING);
 
             // When & Then
-            IllegalStateException e = assertThrows(IllegalStateException.class, () -> {
+            ReviewException e = assertThrows(ReviewException.class, () -> {
                 reviewService.createReview(orderId, dto, loginUser);
             });
-            assertThat(e.getMessage()).isEqualTo("배달이 완료된 주문만 리뷰를 작성할 수 있습니다.");
+            assertThat(e.getErrorCode()).isEqualTo(ErrorCode.ORDER_NOT_COMPLETED);
+        }
+
+        @Test
+        @DisplayName("성공: 여러 개의 리뷰가 달릴 때 가게 평균 평점 및 리뷰 개수 계산 검증")
+        void createReview_UpdateStoreAverageRating() {
+            // Given: 실제 로직이 동작하는 StoreEntity 생성
+            StoreEntity realStore = new StoreEntity(mockUser, mock(CategoryEntity.class), mock(AreaEntity.class), "계산테스트가게", "주소", "010-1111-2222");
+
+            // 리뷰 저장은 전달받은 객체를 그대로 반환하도록 설정
+            given(reviewRepository.save(any(ReviewEntity.class))).willAnswer(returnsFirstArg());
+            given(reviewRepository.findByOrder_OrderId(any(UUID.class))).willReturn(Optional.empty());
+            given(storeRepository.findByIdWithLock(any())).willReturn(Optional.of(realStore));
+
+            // 1. 첫 번째 리뷰: 5점
+            UUID orderId1 = UUID.randomUUID();
+            OrderEntity order1 = mock(OrderEntity.class);
+            given(order1.getStore()).willReturn(realStore);
+            given(order1.getCustomer()).willReturn(mockUser);
+            given(order1.getStatus()).willReturn(OrderStatus.COMPLETED);
+            given(orderRepository.findActiveById(orderId1)).willReturn(Optional.of(order1));
+
+            reviewService.createReview(orderId1, new ReqReviewDto(5, "최고예요"), loginUser);
+
+            // 검증: 5.0점, 리뷰 1개
+            assertThat(realStore.getAverageRating()).isEqualByComparingTo("5.0");
+            assertThat(realStore.getReviewCount()).isEqualTo(1);
+
+            // 2. 두 번째 리뷰: 4점
+            UUID orderId2 = UUID.randomUUID();
+            OrderEntity order2 = mock(OrderEntity.class);
+            given(order2.getStore()).willReturn(realStore);
+            given(order2.getCustomer()).willReturn(mockUser);
+            given(order2.getStatus()).willReturn(OrderStatus.COMPLETED);
+            given(orderRepository.findActiveById(orderId2)).willReturn(Optional.of(order2));
+
+            reviewService.createReview(orderId2, new ReqReviewDto(4, "맛있어요"), loginUser);
+
+            // 검증: (5+4)/2 = 4.5점, 리뷰 2개
+            assertThat(realStore.getAverageRating()).isEqualByComparingTo("4.5");
+            assertThat(realStore.getReviewCount()).isEqualTo(2);
+
+            // 3. 세 번째 리뷰: 2점
+            UUID orderId3 = UUID.randomUUID();
+            OrderEntity order3 = mock(OrderEntity.class);
+            given(order3.getStore()).willReturn(realStore);
+            given(order3.getCustomer()).willReturn(mockUser);
+            given(order3.getStatus()).willReturn(OrderStatus.COMPLETED);
+            given(orderRepository.findActiveById(orderId3)).willReturn(Optional.of(order3));
+
+            reviewService.createReview(orderId3, new ReqReviewDto(2, "그냥 그래요"), loginUser);
+
+            // 검증: (5+4+2)/3 = 11/3 = 3.666... -> 반올림하여 3.7점, 리뷰 3개
+            assertThat(realStore.getAverageRating()).isEqualByComparingTo("3.7");
+            assertThat(realStore.getReviewCount()).isEqualTo(3);
         }
     }
 
@@ -246,7 +313,7 @@ public class ReviewTest {
             // Then
             assertThat(result.getContent()).hasSize(1);
             // 요약된 결과를 리플렉션 등으로 직접 조회할 수 없지만, 로직 상 10자가 넘으면 잘리는지 확인할 수 있습니다.
-            assertThat(result.getContent().get(0).getSummary()).isEqualTo("이 리뷰는 10자가...");
+            assertThat(result.getContent().get(0).getSummary()).isEqualTo("이 리뷰는 10자가... ");
         }
     }
 
@@ -274,10 +341,10 @@ public class ReviewTest {
             given(reviewRepository.findByReviewIdAndDeletedAtIsNull(reviewId)).willReturn(Optional.empty());
 
             // When & Then
-            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+            ReviewException e = assertThrows(ReviewException.class, () -> {
                 reviewService.getReviewDetail(reviewId);
             });
-            assertThat(e.getMessage()).isEqualTo("리뷰 없음." + reviewId);
+            assertThat(e.getErrorCode()).isEqualTo(ErrorCode.REVIEW_NOT_FOUND);
         }
     }
 
@@ -309,10 +376,10 @@ public class ReviewTest {
             given(reviewRepository.findByReviewIdAndDeletedAtIsNull(reviewId)).willReturn(Optional.empty());
 
             // When & Then
-            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+            ReviewException e = assertThrows(ReviewException.class, () -> {
                 reviewService.updateReview(reviewId, dto, loginUser);
             });
-            assertThat(e.getMessage()).isEqualTo("리뷰 없음." + reviewId);
+            assertThat(e.getErrorCode()).isEqualTo(ErrorCode.REVIEW_NOT_FOUND);
         }
 
         @Test
@@ -355,10 +422,10 @@ public class ReviewTest {
             given(reviewRepository.findByReviewIdAndDeletedAtIsNull(reviewId)).willReturn(Optional.empty());
 
             // When & Then
-            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+            ReviewException e = assertThrows(ReviewException.class, () -> {
                 reviewService.deleteReview(reviewId, loginUser);
             });
-            assertThat(e.getMessage()).isEqualTo("리뷰 없음." + reviewId);
+            assertThat(e.getErrorCode()).isEqualTo(ErrorCode.REVIEW_NOT_FOUND);
         }
 
         @Test

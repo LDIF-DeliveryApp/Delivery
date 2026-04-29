@@ -95,12 +95,11 @@ public class OrderRepositoryTest {
         ReflectionTestUtils.setField(menuRequest, "price",          5000);
         menu1 = em.persist(new MenuEntity(menuRequest, store1));
 
-        // Address
-        Address address = Address.builder()
+        address = em.persist(Address.builder()
                 .user(customer1)
                 .address("서울시 종로구 지하문로3가길 33")
                 .detailAddress("101호")
-                .build();
+                .build());
 
         em.flush();
         em.clear();

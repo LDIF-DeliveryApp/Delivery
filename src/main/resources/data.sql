@@ -28,33 +28,37 @@ VALUES ('550e8400-e29b-41d4-a716-446655440002', '피자', NOW(), 'system');
 INSERT INTO p_area (area_id, name, city, district, is_active, is_deleted, created_at, created_by)
 VALUES ('550e8400-e29b-41d4-a716-446655440a01', '역삼동', '서울', '강남구', true, false, NOW(), 'system');
 
--- 6. 상점 (p_store)
-INSERT INTO p_store (store_id, name, address, phone, average_rating, is_hidden, owner_id, category_id, area_id, created_at, created_by)
-VALUES ('550e8400-e29b-41d4-a716-446655440010', '똔똔치킨 강남점', '서울 강남구 역삼동 123-4', '02-123-4567', 4.5, false, 'owner01', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'owner01');
+-- 5.2 주소 (address)
+INSERT INTO address (address_id, user_id, alias, address, detail_address, zip_code, is_default, created_at, created_by)
+VALUES ('550e8400-e29b-41d4-a716-446655440b01', 'customer01', '집', '서울 강남구 역삼동', '101호', '12345', true, NOW(), 'customer01');
 
-INSERT INTO p_store (store_id, name, address, phone, average_rating, is_hidden, owner_id, category_id, area_id, created_at, created_by)
-VALUES ('550e8400-e29b-41d4-a716-446655440020', '도리도리피자', '서울 강남구 역삼동 567-8', '02-987-6543', 5.0, false, 'owner02', '550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'owner02');
+-- 6. 상점 (p_store)
+INSERT INTO p_store (store_id, name, address, phone, average_rating, review_count, is_hidden, owner_id, category_id, area_id, created_at, created_by)
+VALUES ('550e8400-e29b-41d4-a716-446655440010', '똔똔치킨 강남점', '서울 강남구 역삼동 123-4', '02-123-4567', 4.5, 2, false, 'owner01', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'owner01');
+
+INSERT INTO p_store (store_id, name, address, phone, average_rating, review_count, is_hidden, owner_id, category_id, area_id, created_at, created_by)
+VALUES ('550e8400-e29b-41d4-a716-446655440020', '도리도리피자', '서울 강남구 역삼동 567-8', '02-987-6543', 5.0, 1, false, 'owner02', '550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'owner02');
 
 -- 7. 주문 (p_order)
 -- 기존 주문 3개 (리뷰 있음)
 INSERT INTO p_order (order_id, customer_id, store_id, total_price, status, order_type, address_id, created_at, created_by)
-VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'customer01', '550e8400-e29b-41d4-a716-446655440010', 20000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'customer01');
+VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'customer01', '550e8400-e29b-41d4-a716-446655440010', 20000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440b01', NOW(), 'customer01');
 
 INSERT INTO p_order (order_id, customer_id, store_id, total_price, status, order_type, address_id, created_at, created_by)
-VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380b12', 'customer02', '550e8400-e29b-41d4-a716-446655440010', 18000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'customer02');
+VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380b12', 'customer02', '550e8400-e29b-41d4-a716-446655440010', 18000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440b01', NOW(), 'customer02');
 
 INSERT INTO p_order (order_id, customer_id, store_id, total_price, status, order_type, address_id, created_at, created_by)
-VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380c12', 'customer01', '550e8400-e29b-41d4-a716-446655440020', 25000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'customer01');
+VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380c12', 'customer01', '550e8400-e29b-41d4-a716-446655440020', 25000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440b01', NOW(), 'customer01');
 
 -- 추가 주문 3개 (리뷰 없음, 테스트용)
 INSERT INTO p_order (order_id, customer_id, store_id, total_price, status, order_type, address_id, created_at, created_by)
-VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380d12', 'customer01', '550e8400-e29b-41d4-a716-446655440010', 15000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'customer01');
+VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380d12', 'customer01', '550e8400-e29b-41d4-a716-446655440010', 15000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440b01', NOW(), 'customer01');
 
 INSERT INTO p_order (order_id, customer_id, store_id, total_price, status, order_type, address_id, created_at, created_by)
-VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380e12', 'customer02', '550e8400-e29b-41d4-a716-446655440020', 30000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'customer02');
+VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380e12', 'customer02', '550e8400-e29b-41d4-a716-446655440020', 30000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440b01', NOW(), 'customer02');
 
 INSERT INTO p_order (order_id, customer_id, store_id, total_price, status, order_type, address_id, created_at, created_by)
-VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380f12', 'customer01', '550e8400-e29b-41d4-a716-446655440020', 12000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440a01', NOW(), 'customer01');
+VALUES ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380f12', 'customer01', '550e8400-e29b-41d4-a716-446655440020', 12000, 'COMPLETED', 'ONLINE', '550e8400-e29b-41d4-a716-446655440b01', NOW(), 'customer01');
 
 -- 8. 리뷰 (p_review)
 INSERT INTO p_review (review_id, order_id, store_id, customer_id, rating, content, created_at, created_by)

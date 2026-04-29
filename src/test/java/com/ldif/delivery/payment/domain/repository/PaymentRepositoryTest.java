@@ -1,5 +1,6 @@
 package com.ldif.delivery.payment.domain.repository;
 
+import com.ldif.delivery.address.entity.Address;
 import com.ldif.delivery.area.domain.entity.AreaEntity;
 import com.ldif.delivery.area.persentation.dto.AreaRequest;
 import com.ldif.delivery.category.domain.entity.CategoryEntity;
@@ -114,6 +115,17 @@ class PaymentRepositoryTest {
         em.persist(category);
         em.persist(area);
 
+        Address address = Address.builder()
+                .user(customer)
+                .alias("집")
+                .address("서울시 강남구")
+                .detailAddress("101호")
+                .zipCode("12345")
+                .isDefault(true)
+                .build();
+
+        em.persist(address);
+
         StoreEntity store = new StoreEntity(
                 owner,
                 category,
@@ -128,7 +140,7 @@ class PaymentRepositoryTest {
         OrderEntity order = OrderEntity.create(
                 customer,
                 store,
-                UUID.randomUUID(),
+                address,
                 OrderType.ONLINE,
                 "요청사항 없음",
                 List.of(),

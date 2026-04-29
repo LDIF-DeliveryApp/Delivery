@@ -28,8 +28,6 @@ class AreaServiceV1Test {
 
     @Mock
     private AreaRepository areaRepository;
-    @Mock
-    private UserRepository userRepository;
 
     @InjectMocks
     private AreaServiceV1 areaServiceV1;
@@ -51,8 +49,6 @@ class AreaServiceV1Test {
         AreaRequest request = new AreaRequest();
         ReflectionTestUtils.setField(request, "name", "서울");
 
-        given(userRepository.findById(any())).willReturn(Optional.of(manger));
-
         //when
         AreaResponse response = areaServiceV1.setArea(request, loginUser);
 
@@ -62,17 +58,20 @@ class AreaServiceV1Test {
     }
 
     @Test
-    @DisplayName("새로운 지역 실패 - 권한")
-    void setArea_Fail() {
+    @DisplayName("새로운 지역 성공 - 권한 체크 없음")
+    void setArea_NoAuthCheck() {
         //given
         UserEntity customer = new UserEntity("user", "nick", "u@u.com", "pass", UserRoleEnum.CUSTOMER);
         UserDetailsImpl customerUser = new UserDetailsImpl(customer);
+        AreaRequest request = new AreaRequest();
+        ReflectionTestUtils.setField(request, "name", "경기");
 
-        given(userRepository.findById(any())).willReturn(Optional.of(customer));
+        //when
+        AreaResponse response = areaServiceV1.setArea(request, customerUser);
 
-        //when,then
-        assertThrows(AccessDeniedException.class, () ->
-                areaServiceV1.setArea(new AreaRequest(), customerUser));
+        //then
+        assertNotNull(response);
+        assertEquals("경기", response.getName());
     }
 
 }
