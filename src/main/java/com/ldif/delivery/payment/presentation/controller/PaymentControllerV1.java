@@ -26,7 +26,7 @@ public class PaymentControllerV1 {
     private final PaymentServiceV1 paymentServiceV1;
 
     // 결제 목록 조회 - 관리자/매니저만
-    @GetMapping
+    @GetMapping("/payments")
     @Secured({
             UserRoleEnum.Authority.MASTER,
             UserRoleEnum.Authority.MANAGER
