@@ -39,8 +39,7 @@ public class AuthServiceV1 {
             throw new IllegalArgumentException("중복된 Email 입니다.");
         }
 
-        //TODO
-        //사용자 ROLE 확인? 확인필요
+        
 
         UserEntity user = new UserEntity(username, nickname, email, password, role);
         UserEntity savedUser = userRepository.save(user);
