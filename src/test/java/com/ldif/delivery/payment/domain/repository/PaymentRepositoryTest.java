@@ -137,6 +137,9 @@ class PaymentRepositoryTest {
 
         em.persist(store);
 
+        Address address = createAddress(customer);
+        em.persist(address);
+
         OrderEntity order = OrderEntity.create(
                 customer,
                 store,
@@ -172,5 +175,16 @@ class PaymentRepositoryTest {
         when(request.getDistrict()).thenReturn("종로구");
 
         return new AreaEntity(request);
+    }
+
+    private Address createAddress(UserEntity customer) {
+        return Address.builder()
+                .user(customer)
+                .alias("집")
+                .address("서울시 종로구")
+                .detailAddress("101호")
+                .zipCode("12345")
+                .isDefault(true)
+                .build();
     }
 }
