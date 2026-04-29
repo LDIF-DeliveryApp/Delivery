@@ -3,9 +3,11 @@ package com.ldif.delivery.payment.presentation.controller;
 import com.ldif.delivery.global.infrastructure.presentation.dto.CommonResponse;
 import com.ldif.delivery.global.infrastructure.config.security.UserDetailsImpl;
 import com.ldif.delivery.payment.application.service.PaymentServiceV1;
+import com.ldif.delivery.payment.presentation.dto.PaymentRequest;
 import com.ldif.delivery.payment.presentation.dto.PaymentResponse;
 import com.ldif.delivery.payment.presentation.dto.PaymentStatusResponse;
 import com.ldif.delivery.user.domain.entity.UserRoleEnum;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -18,7 +20,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/payments")
+@RequestMapping("/api/v1")
 public class PaymentControllerV1 {
 
     private final PaymentServiceV1 paymentServiceV1;
@@ -43,7 +45,7 @@ public class PaymentControllerV1 {
     }
 
     // 결제 상세 조회 - 고객/관리자/매니저
-    @GetMapping("/{paymentId}")
+    @GetMapping("/payments/{paymentId}")
     @Secured({
             UserRoleEnum.Authority.CUSTOMER,
             UserRoleEnum.Authority.MANAGER,
@@ -60,7 +62,7 @@ public class PaymentControllerV1 {
     }
 
     // 결제 상태 조회 - 고객/관리자/매니저
-    @GetMapping("/{paymentId}/status")
+    @GetMapping("/payments/{paymentId}/status")
     @Secured({
             UserRoleEnum.Authority.CUSTOMER,
             UserRoleEnum.Authority.MANAGER,
@@ -77,7 +79,7 @@ public class PaymentControllerV1 {
     }
 
     // 결제 취소 - 고객/관리자/매니저
-    @PatchMapping("/{paymentId}/cancel")
+    @PatchMapping("/payments/{paymentId}/cancel")
     @Secured({
             UserRoleEnum.Authority.CUSTOMER,
             UserRoleEnum.Authority.MANAGER,
@@ -91,5 +93,19 @@ public class PaymentControllerV1 {
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CommonResponse.success(HttpStatus.OK.value(), "SUCCESS", null));
+    }
+
+    // 결제 생성 - CUSTOMER(본인)
+    @PostMapping("/orders/{orderId}/payments")
+    @Secured(UserRoleEnum.Authority.CUSTOMER)
+    public ResponseEntity<CommonResponse<PaymentResponse>> createPayment(
+            @PathVariable UUID orderId,
+            @Valid @RequestBody PaymentRequest req,
+            @AuthenticationPrincipal UserDetailsImpl loginUser
+    ) {
+        PaymentResponse payment = paymentServiceV1.createPayment(orderId, req, loginUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(CommonResponse.success(HttpStatus.CREATED.value(), "결제가 완료되었습니다.", payment));
     }
 }
