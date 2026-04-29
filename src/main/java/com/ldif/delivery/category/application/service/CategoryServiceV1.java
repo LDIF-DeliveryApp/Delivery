@@ -35,7 +35,7 @@ public class CategoryServiceV1 {
                 EnumSet.of(UserRoleEnum.MASTER, UserRoleEnum.MANAGER)
         );
 
-        if (categoryRepository.existsByName(request.getName())) {
+        if (categoryRepository.existsByNameAndDeletedAtIsNull(request.getName())) {
             throw new IllegalArgumentException("이미 존재하는 카테고리입니다.");
         }
 
@@ -50,7 +50,7 @@ public class CategoryServiceV1 {
 
     @Transactional(readOnly = true)
     public CategoryResponse getCategory(UUID categoryId) {
-        CategoryEntity categoryEntity = categoryRepository.findById(categoryId)
+        CategoryEntity categoryEntity = categoryRepository.findByCategoryIdAndDeletedAtIsNull(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않습니다!"));
 
         return CategoryResponse.from(categoryEntity);
@@ -65,7 +65,7 @@ public class CategoryServiceV1 {
                 EnumSet.of(UserRoleEnum.MASTER, UserRoleEnum.MANAGER)
         );
 
-        CategoryEntity categoryEntity = categoryRepository.findById(categoryId)
+        CategoryEntity categoryEntity = categoryRepository.findByCategoryIdAndDeletedAtIsNull(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않습니다"));
 
         categoryEntity.update(request.getName());
@@ -80,7 +80,7 @@ public class CategoryServiceV1 {
                 EnumSet.of(UserRoleEnum.MASTER, UserRoleEnum.MANAGER)
         );
 
-        CategoryEntity categoryEntity = categoryRepository.findById(categoryId)
+        CategoryEntity categoryEntity = categoryRepository.findByCategoryIdAndDeletedAtIsNull(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않습니다"));
 
         categoryEntity.softDelete(loginUser.getUsername());
@@ -104,9 +104,9 @@ public class CategoryServiceV1 {
         Page<CategoryEntity> categories;
 
         if (keyword == null || keyword.isBlank()) {
-            categories = categoryRepository.findByIsHiddenFalse(pageable);
+            categories = categoryRepository.findByIsHiddenFalseAndDeletedAtIsNull(pageable);
         } else {
-            categories = categoryRepository.findByNameContainingIgnoreCaseAndIsHiddenFalse(
+            categories = categoryRepository.findByNameContainingIgnoreCaseAndIsHiddenFalseAndDeletedAtIsNull(
                     keyword,
                     pageable
             );

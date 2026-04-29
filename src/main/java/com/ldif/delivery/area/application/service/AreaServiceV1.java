@@ -60,6 +60,7 @@ public class AreaServiceV1 {
     }
 
     //지역 수정
+    @Transactional
     public AreaResponse updateArea(UUID areaId, AreaRequest request, UserDetailsImpl loginUser) {
 
         AreaEntity areaEntity = findAreaById(areaId);
@@ -68,6 +69,7 @@ public class AreaServiceV1 {
     }
 
     //지역 삭제
+    @Transactional
     public void deleteArea(UUID areaId, UserDetailsImpl loginUser) {
 
         AreaEntity areaEntity = findAreaById(areaId);
@@ -75,6 +77,7 @@ public class AreaServiceV1 {
     }
 
     // 지역 활성화/비활성화
+    @Transactional
     public AreaResponse toggleActive(UUID areaId, UserDetailsImpl loginUser) {
 
         AreaEntity areaEntity = findAreaById(areaId);
