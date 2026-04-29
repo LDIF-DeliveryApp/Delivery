@@ -57,7 +57,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
                         .orElseThrow(() -> new RuntimeException("권한 정보가 없습니다."));
 
                 // 3. 불일치 시 차단 대신 재로그인 유도
-                if (!tokenRole.equals(dbRole)) {
+                if (!dbRole.equals("ROLE_" + tokenRole)) {
                     log.warn("권한 불일치 - JWT: {}, DB: {}", tokenRole, dbRole, info.getSubject());
                     res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     res.setContentType("application/json");
