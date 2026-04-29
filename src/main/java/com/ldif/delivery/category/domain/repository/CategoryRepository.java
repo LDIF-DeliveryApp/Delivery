@@ -5,16 +5,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface CategoryRepository extends JpaRepository<CategoryEntity, UUID> {
 
-    boolean existsByName(String name);
+    Optional<CategoryEntity> findByCategoryIdAndDeletedAtIsNull(UUID categoryId);
 
-    Page<CategoryEntity> findByNameContainingIgnoreCaseAndIsHiddenFalse(
+    boolean existsByNameAndDeletedAtIsNull(String name);
+
+    Page<CategoryEntity> findByNameContainingIgnoreCaseAndIsHiddenFalseAndDeletedAtIsNull(
             String keyword,
             Pageable pageable
     );
 
-    Page<CategoryEntity> findByIsHiddenFalse(Pageable pageable);
+    Page<CategoryEntity> findByIsHiddenFalseAndDeletedAtIsNull(Pageable pageable);
 }
