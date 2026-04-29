@@ -210,6 +210,15 @@ scp -i <key-pair>.pem build/libs/*.jar ubuntu@<EC2-IP>:/home/ubuntu/
 scp -i <key-pair>.pem .env ubuntu@<EC2-IP>:/home/ubuntu/
 ```
 
+SSH config에 등록해놓았을 경우(delivery로 등록)
+```bash
+# 1. JAR 파일 전송 (빌드된 결과물)
+scp build/libs/*.jar delivery:/home/ubuntu/
+
+# 2. 환경변수(.env) 파일 전송
+scp .env delivery:/home/ubuntu/
+```
+
 #### **3단계: 배포 스크립트 실행**
 EC2 서버 내에서 기존 프로세스를 종료하고 서버를 재시작합니다.
 ```bash
