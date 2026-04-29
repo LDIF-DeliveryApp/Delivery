@@ -99,10 +99,10 @@
 
 ## 5️⃣ 아키텍처 
 ### 🧩 시스템 아키텍처
-![ChatGPT Image 2026년 4월 24일 오후 02_57_38](https://hackmd.io/_uploads/HJNt8Yu6Zg.png)
+![시스템 아키텍처](https://hackmd.io/_uploads/BJeLLJ10Wl.jpg)
 
 ### ☁️ 배포 아키텍처
-![ChatGPT Image 2026년 4월 24일 오후 03_00_10](https://hackmd.io/_uploads/SJ9VPKOpWl.png)
+![배포 아키텍처](https://hackmd.io/_uploads/SJ9VPKOpWl.png)
 
 
 ## 6️⃣ 패키지 구조
