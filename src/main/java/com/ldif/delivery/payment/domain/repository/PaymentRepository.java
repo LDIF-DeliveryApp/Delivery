@@ -13,4 +13,6 @@ public interface PaymentRepository extends JpaRepository<PaymentEntity, UUID> {
 
     Page<PaymentEntity> findByStatusAndDeletedAtIsNull(PaymentStatus status, Pageable pageable);
 
+    //  중복 결제 검증
+    boolean existsByOrder_OrderId(UUID orderId);
 }
