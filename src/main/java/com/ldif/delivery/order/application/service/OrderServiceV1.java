@@ -221,12 +221,9 @@ public class OrderServiceV1 {
             return OrderResponse.from(order);
         }
 
-        // PENDING이 아닌 상태면 예외 대신 현재 상태 반환
-        if (order.getStatus() != OrderStatus.PENDING) {
-            return OrderResponse.from(order);
-        }
-
+        // PENDING이 아닌 상태면 예외 (내부에서 검증)
         order.updateRequest(req.request());
+
         return OrderResponse.from(order);
     }
 
@@ -248,7 +245,9 @@ public class OrderServiceV1 {
             return OrderResponse.from(order);
         }
 
+        // 잘못된 상태 변화이면 예외 (내부에서 검증)
         order.changeStatus(req.status());
+
         return OrderResponse.from(order);
     }
 
