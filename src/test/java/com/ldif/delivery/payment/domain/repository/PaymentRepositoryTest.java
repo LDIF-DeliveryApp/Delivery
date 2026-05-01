@@ -137,7 +137,7 @@ class PaymentRepositoryTest {
 
         em.persist(store);
 
-        Address address = createAddress(customer);
+        address = createAddress(customer);
         em.persist(address);
 
         OrderEntity order = OrderEntity.create(
