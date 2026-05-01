@@ -205,17 +205,28 @@ public class OrderServiceV1 {
     public OrderResponse updateOrder(UUID orderId, OrderUpdateRequest req,
                                      String requesterId, String requesterRole) {
 
-        OrderEntity order = orderRepository.findActiveByIdWithLock(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(orderId));
+        OrderEntity order = findActiveByIdWithLock(orderId);
 
         if ("MASTER".equals(requesterRole)) {
             order.updateRequestByMaster(req.request());
-        } else {
-            // CUSTOMER: 본인 주문인지 확인
-            validateOwnership(order, requesterId);
-            order.updateRequest(req.request()); // PENDING 아니면 내부에서 예외
+            return  OrderResponse.from(order);
         }
 
+        // CUSTOMER: 본인 주문인지 확인
+        validateOwnership(order, requesterId);
+
+        // 멱등성 보장: 이미 같은 요청사항이면 그대로 반환
+        if (req.request() != null &&
+                req.request().equals(order.getRequest())) {
+            return OrderResponse.from(order);
+        }
+
+        // PENDING이 아닌 상태면 예외 대신 현재 상태 반환
+        if (order.getStatus() != OrderStatus.PENDING) {
+            return OrderResponse.from(order);
+        }
+
+        order.updateRequest(req.request());
         return OrderResponse.from(order);
     }
 
@@ -226,11 +237,15 @@ public class OrderServiceV1 {
     public OrderResponse changeStatus(UUID orderId, OrderStatusRequest req,
                                       String requesterId, String requesterRole) {
 
-        OrderEntity order = orderRepository.findActiveByIdWithLock(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(orderId));
+        OrderEntity order = findActiveByIdWithLock(orderId);
 
         if ("OWNER".equals(requesterRole)) {
             validateStoreOwner(order.getStore().getStoreId(), requesterId);
+        }
+
+        // 멱등성 보장: 이미 같은 상태이면 그대로 반환
+        if (order.getStatus() == req.status()) {
+            return OrderResponse.from(order);
         }
 
         order.changeStatus(req.status());
@@ -243,8 +258,7 @@ public class OrderServiceV1 {
     @Transactional
     public OrderResponse cancelOrder(UUID orderId, String requesterId, String requesterRole) {
 
-        OrderEntity order = orderRepository.findActiveByIdWithLock(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(orderId));
+        OrderEntity order = findActiveByIdWithLock(orderId);
 
         // 취소 멱등성 보장: 이미 취소된 주문이면 예외 대신 현재 상태 그대로 반환
         if (order.getStatus() == OrderStatus.CANCELED) {
@@ -275,11 +289,16 @@ public class OrderServiceV1 {
     @Transactional
     public void  deleteOrder(UUID orderId, String masterUsername) {
 
-        OrderEntity order = orderRepository.findActiveByIdWithLock(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(orderId));
+        OrderEntity order = findActiveByIdWithLock(orderId);
         order.softDelete(masterUsername);
     }
 
+
+    // 주문 접근 가능자 확인
+    private OrderEntity findActiveByIdWithLock(UUID orderId) {
+        return orderRepository.findActiveByIdWithLock(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
+    }
 
     // 주문 접근 가능자 확인
     private void validateOwnership(OrderEntity order, String requesterId) {
