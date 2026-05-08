@@ -49,7 +49,16 @@ public class OrderServiceV1 {
     @Transactional
     public OrderResponse createOrder(OrderCreateRequest req, String customerId) {
 
-        //1. 주문자 조회
+        // 중복 주문 방지: 같은 고객이 같은 가게에 PENDING 주문이 이미 있으면 차단
+        boolean hasPendingOrder = orderRepository
+                .existsByCustomer_UsernameAndStore_StoreIdAndStatus(
+                        customerId, req.storeId(), OrderStatus.PENDING);
+
+        if (hasPendingOrder) {
+            throw new OrderBusinessException("이미 처리 중인 주문이 있습니다.");
+        }
+
+        // 1. 주문자 조회
         UserEntity customer = userRepository.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "존재하지 않는 사용자입니다. customerId=" + customerId));
@@ -183,7 +192,8 @@ public class OrderServiceV1 {
     // ───────────────────────────────────────────────────────────
     public OrderResponse getOrder(UUID orderId, String requesterId, String requesterRole) {
 
-        OrderEntity order = findActiveOrder(orderId);
+        OrderEntity order = orderRepository.findActiveById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
         validateReadAccess(order, requesterId, requesterRole);
         return OrderResponse.from(order);
     }
@@ -195,15 +205,24 @@ public class OrderServiceV1 {
     public OrderResponse updateOrder(UUID orderId, OrderUpdateRequest req,
                                      String requesterId, String requesterRole) {
 
-        OrderEntity order = findActiveOrder(orderId);
+        OrderEntity order = findActiveByIdWithLock(orderId);
 
         if ("MASTER".equals(requesterRole)) {
             order.updateRequestByMaster(req.request());
-        } else {
-            // CUSTOMER: 본인 주문인지 확인
-            validateOwnership(order, requesterId);
-            order.updateRequest(req.request()); // PENDING 아니면 내부에서 예외
+            return  OrderResponse.from(order);
         }
+
+        // CUSTOMER: 본인 주문인지 확인
+        validateOwnership(order, requesterId);
+
+        // 멱등성 보장: 이미 같은 요청사항이면 그대로 반환
+        if (req.request() != null &&
+                req.request().equals(order.getRequest())) {
+            return OrderResponse.from(order);
+        }
+
+        // PENDING이 아닌 상태면 예외 (내부에서 검증)
+        order.updateRequest(req.request());
 
         return OrderResponse.from(order);
     }
@@ -215,13 +234,20 @@ public class OrderServiceV1 {
     public OrderResponse changeStatus(UUID orderId, OrderStatusRequest req,
                                       String requesterId, String requesterRole) {
 
-        OrderEntity order = findActiveOrder(orderId);
+        OrderEntity order = findActiveByIdWithLock(orderId);
 
         if ("OWNER".equals(requesterRole)) {
             validateStoreOwner(order.getStore().getStoreId(), requesterId);
         }
 
+        // 멱등성 보장: 이미 같은 상태이면 그대로 반환
+        if (order.getStatus() == req.status()) {
+            return OrderResponse.from(order);
+        }
+
+        // 잘못된 상태 변화이면 예외 (내부에서 검증)
         order.changeStatus(req.status());
+
         return OrderResponse.from(order);
     }
 
@@ -230,7 +256,13 @@ public class OrderServiceV1 {
     // ───────────────────────────────────────────────────────────
     @Transactional
     public OrderResponse cancelOrder(UUID orderId, String requesterId, String requesterRole) {
-        OrderEntity order = findActiveOrder(orderId);
+
+        OrderEntity order = findActiveByIdWithLock(orderId);
+
+        // 취소 멱등성 보장: 이미 취소된 주문이면 예외 대신 현재 상태 그대로 반환
+        if (order.getStatus() == OrderStatus.CANCELED) {
+            return OrderResponse.from(order);
+        }
 
         if ("MASTER".equals(requesterRole)) {
             order.changeStatus(OrderStatus.CANCELED);
@@ -256,14 +288,14 @@ public class OrderServiceV1 {
     @Transactional
     public void  deleteOrder(UUID orderId, String masterUsername) {
 
-        OrderEntity order = findActiveOrder(orderId);
+        OrderEntity order = findActiveByIdWithLock(orderId);
         order.softDelete(masterUsername);
     }
 
 
-    // 주문 존재 여부 확인
-    private OrderEntity findActiveOrder(UUID orderId) {
-        return orderRepository.findActiveById(orderId)
+    // 주문 접근 가능자 확인
+    private OrderEntity findActiveByIdWithLock(UUID orderId) {
+        return orderRepository.findActiveByIdWithLock(orderId)
                 .orElseThrow(() -> new OrderNotFoundException(orderId));
     }
 
